@@ -1,0 +1,17 @@
+-- The active_questions table has a unique constraint on quiz_id
+-- This means only ONE question can be active per quiz at a time
+-- 
+-- Current constraint:
+-- CREATE UNIQUE INDEX active_questions_quiz_idx ON active_questions (quiz_id);
+--
+-- This design means:
+-- 1. Only one question can be "active" (visible to participants) at a time
+-- 2. To show a different question, we need to UPDATE the existing record, not INSERT a new one
+-- 3. To hide all questions, we DELETE the record
+--
+-- If you want to allow multiple questions to be visible simultaneously,
+-- you would need to drop this unique constraint:
+-- DROP INDEX active_questions_quiz_idx;
+--
+-- And create a new unique constraint on (quiz_id, question_id) instead:
+-- CREATE UNIQUE INDEX active_questions_quiz_question_idx ON active_questions (quiz_id, question_id);
