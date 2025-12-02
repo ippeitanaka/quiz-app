@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import { useRouter } from "next/navigation"
-import { RefreshCw, AlertCircle, Loader2, ExternalLink, Bug } from "lucide-react"
+import { RefreshCw, AlertCircle, Loader2, ExternalLink, Bug, Bell } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Quiz {
   id: string
@@ -28,6 +29,7 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
   const [debugInfo, setDebugInfo] = useState<any>({})
   const [showDebug, setShowDebug] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
+  const [mode, setMode] = useState<"quiz" | "buzzer">("quiz")
   const router = useRouter()
 
   // クイズ情報を取得（複数の方法を試行）
@@ -253,8 +255,11 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
 
       console.log("Participant created successfully:", responseData.data.id)
 
-      // クイズページに遷移
-      const playUrl = `/play/${params.code}?participant=${responseData.data.id}`
+      // クイズページまたは早押しページに遷移
+      const playUrl =
+        mode === "buzzer"
+          ? `/buzzer/${params.code}?participant=${responseData.data.id}`
+          : `/play/${params.code}?participant=${responseData.data.id}`
       console.log("Redirecting to:", playUrl)
       router.push(playUrl)
     } catch (err) {
@@ -362,47 +367,73 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
     )
   } else if (quiz) {
     content = (
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <label htmlFor="name" className="text-sm font-medium">
-            あなたの名前
-          </label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="ニックネームを入力してください"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={20}
-            disabled={submitting}
-            autoComplete="off"
-          />
-          {error && (
-            <Alert variant="destructive" className="py-2">
-              <AlertCircle className="h-4 w-4 mr-2" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </div>
+      <div className="space-y-6">
+        {/* モード選択タブ */}
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "quiz" | "buzzer")} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="quiz">クイズモード</TabsTrigger>
+            <TabsTrigger value="buzzer">
+              <Bell className="h-4 w-4 mr-1" />
+              早押しモード
+            </TabsTrigger>
+          </TabsList>
 
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              参加中...
-            </>
-          ) : (
-            "参加する"
-          )}
-        </Button>
+          <TabsContent value="quiz" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">問題に回答してスコアを競います</p>
+          </TabsContent>
 
-        {/* クイズ情報 */}
-        <div className="text-center text-sm text-muted-foreground space-y-1">
-          <p className="font-medium">クイズ: {quiz.title}</p>
-          {quiz.description && <p>説明: {quiz.description}</p>}
-          <p className="text-green-600">✓ アクティブ</p>
-        </div>
-      </form>
+          <TabsContent value="buzzer" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">早押しボタンで競争します</p>
+          </TabsContent>
+        </Tabs>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">
+              あなたの名前
+            </label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="ニックネームを入力してください"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              maxLength={20}
+              disabled={submitting}
+              autoComplete="off"
+            />
+            {error && (
+              <Alert variant="destructive" className="py-2">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                参加中...
+              </>
+            ) : mode === "buzzer" ? (
+              <>
+                <Bell className="mr-2 h-4 w-4" />
+                早押しに参加
+              </>
+            ) : (
+              "クイズに参加"
+            )}
+          </Button>
+
+          {/* クイズ情報 */}
+          <div className="text-center text-sm text-muted-foreground space-y-1">
+            <p className="font-medium">クイズ: {quiz.title}</p>
+            {quiz.description && <p>説明: {quiz.description}</p>}
+            <p className="text-green-600">✓ アクティブ</p>
+          </div>
+        </form>
+      </div>
     )
   } else {
     content = (

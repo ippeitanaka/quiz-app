@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { QuizCard } from "@/components/ui/quiz-card"
-import { Settings } from "lucide-react"
+import { Settings, Bell } from "lucide-react"
 import { SupabaseConfigCheck } from "@/components/supabase-config-check"
 
 export default function Home() {
@@ -48,6 +48,7 @@ export default function Home() {
                 <li>簡単なアクセスコード</li>
                 <li>リアルタイムの回答とスコア</li>
                 <li>QRコードを使って簡単に共有</li>
+                <li>🆕 早押しボタン専用モード</li>
               </ul>
             </div>
           </QuizCard>
@@ -88,7 +89,37 @@ export default function Home() {
               <li>ユニークな名前を選ぼう</li>
               <li>リアルタイムでクイズに回答</li>
               <li>他の参加者とスコアを競おう</li>
+              <li>🆕 早押しモードも選択可能</li>
             </ul>
+          </div>
+        </QuizCard>
+      </div>
+
+      {/* 早押し機能の紹介 */}
+      <div className="w-full max-w-4xl">
+        <QuizCard
+          title="🆕 早押しボタン機能"
+          description="クイズとは別に、早押しボタンとして使えます"
+          gradient="orange"
+        >
+          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-6 py-4">
+            <div className="flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-xl">
+                <Bell className="h-16 w-16 text-white" />
+              </div>
+            </div>
+            <div className="flex-1 space-y-3">
+              <ul className="list-disc pl-6 space-y-2 text-sm">
+                <li>問題なしで早押しボタンだけ使える</li>
+                <li>押した順番が自動で記録される</li>
+                <li>管理者がポイントを付与</li>
+                <li>リアルタイムでランキング表示</li>
+                <li>クイズ大会や授業での活用に最適</li>
+              </ul>
+              <p className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                💡 使い方: クイズを作成後、ダッシュボードから「早押し」ボタンをクリック。参加者は「早押しモード」を選んで参加！
+              </p>
+            </div>
           </div>
         </QuizCard>
       </div>

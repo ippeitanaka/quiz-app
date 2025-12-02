@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase/supabase"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { Quiz } from "@/lib/supabase/schema"
-import { Trash2, Loader2 } from "lucide-react"
+import { Trash2, Loader2, Bell } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import {
   AlertDialog,
@@ -141,14 +141,21 @@ export default function AdminDashboardPage() {
               description={quiz.description || "説明なし"}
               gradient={quiz.is_active ? "green" : "blue"}
               footer={
-                <div className="w-full flex justify-between">
-                  <Button asChild className="flex-1 mr-2">
-                    <Link href={`/admin/quiz/${quiz.id}`}>管理する</Link>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-red-500">
-                        <Trash2 className="h-4 w-4" />
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between">
+                    <Button asChild className="flex-1 mr-2">
+                      <Link href={`/admin/quiz/${quiz.id}`}>管理する</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="flex-1 mr-2">
+                      <Link href={`/admin/buzzer/${quiz.id}`}>
+                        <Bell className="h-4 w-4 mr-1" />
+                        早押し
+                      </Link>
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="text-red-500">
+                          <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
