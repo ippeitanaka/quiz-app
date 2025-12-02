@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import Link from "next/link"
@@ -9,6 +9,7 @@ import { Bell, Trophy, Award, Clock } from "lucide-react"
 
 export default function BuzzerPage({ params }: { params: { code: string } }) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const participantId = searchParams.get("participant")
 
   const [quiz, setQuiz] = useState<any | null>(null)
@@ -24,9 +25,9 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        // 参加者IDがない場合は参加ページにリダイレクト
         if (!participantId) {
-          setError("参加者IDが見つかりません")
-          setLoading(false)
+          router.push(`/join/${params.code}`)
           return
         }
 

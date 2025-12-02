@@ -51,6 +51,18 @@ export async function POST(request: NextRequest) {
       }
 
       questionId = newQuestion.id
+
+      // 早押し専用問題を自動的にアクティブにする
+      const { error: activeError } = await supabase.from("active_questions").insert({
+        quiz_id: quizId,
+        question_id: questionId,
+        results_revealed: false,
+      })
+
+      if (activeError) {
+        console.error("Active question creation error:", activeError)
+        // エラーでも続行（既に存在する可能性がある）
+      }
     }
 
     // 早押しタイムスタンプを記録
