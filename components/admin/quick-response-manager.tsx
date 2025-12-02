@@ -251,7 +251,7 @@ export function QuickResponseManager({ questionId, questionPoints, onUpdate }: Q
   }
 
   return (
-    <QuizCard title="早押し管理" description="参加者の早押し順序とポイント付与" gradient="orange">
+    <QuizCard title="早押し管理" description="参加者の早押し順序とポイント付与" gradient="yellow">
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">

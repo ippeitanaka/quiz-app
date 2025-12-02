@@ -15,13 +15,50 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 早押しタイムスタンプを記録（buzzer_pressesテーブルを作成するか、既存のテーブルを使用）
-    // ここでは簡易的にresponsesテーブルを使用
+    // まず、このクイズ用の早押し専用ダミー問題を取得または作成
+    const { data: existingQuestion, error: questionFetchError } = await supabase
+      .from("questions")
+      .select("id")
+      .eq("quiz_id", quizId)
+      .eq("type", "quick_response")
+      .eq("content", "早押し専用")
+      .maybeSingle()
+
+    let questionId: string
+
+    if (existingQuestion) {
+      questionId = existingQuestion.id
+    } else {
+      // 早押し専用の問題を作成
+      const { data: newQuestion, error: createError } = await supabase
+        .from("questions")
+        .insert({
+          quiz_id: quizId,
+          content: "早押し専用",
+          type: "quick_response",
+          points: 10,
+          order: 0,
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error("Question creation error:", createError)
+        return NextResponse.json(
+          { error: "早押し問題の作成に失敗しました: " + createError.message },
+          { status: 500 },
+        )
+      }
+
+      questionId = newQuestion.id
+    }
+
+    // 早押しタイムスタンプを記録
     const { data: insertData, error: insertError } = await supabase
       .from("responses")
       .insert({
         participant_id: participantId,
-        question_id: quizId, // 早押し専用の場合、quizIdを使用（または専用のダミーquestionを作成）
+        question_id: questionId,
         answer: "早押し",
         points_awarded: 0,
         responded_at: new Date().toISOString(),

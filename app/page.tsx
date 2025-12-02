@@ -100,7 +100,7 @@ export default function Home() {
         <QuizCard
           title="🆕 早押しボタン機能"
           description="クイズとは別に、早押しボタンとして使えます"
-          gradient="orange"
+          gradient="yellow"
         >
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 md:space-x-6 py-4">
             <div className="flex items-center justify-center">

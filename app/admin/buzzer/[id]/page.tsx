@@ -146,6 +146,26 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
 
     const fetchBuzzerResponses = async () => {
       try {
+        // まず早押し専用問題を取得
+        const { data: buzzerQuestion, error: questionError } = await supabase
+          .from("questions")
+          .select("id")
+          .eq("quiz_id", quiz.id)
+          .eq("type", "quick_response")
+          .eq("content", "早押し専用")
+          .maybeSingle()
+
+        if (questionError && questionError.code !== "PGRST116") {
+          console.error("Question fetch error:", questionError)
+          return
+        }
+
+        if (!buzzerQuestion) {
+          // まだ早押しデータがない
+          setBuzzerResponses([])
+          return
+        }
+
         // responsesテーブルから早押しデータを取得
         const { data: responsesData, error: responsesError } = await supabase
           .from("responses")
@@ -160,7 +180,7 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
             )
           `,
           )
-          .eq("question_id", quiz.id) // 早押しモードではquestion_idにquiz.idを使用
+          .eq("question_id", buzzerQuestion.id)
           .eq("answer", "早押し")
           .order("responded_at", { ascending: true })
 
@@ -266,11 +286,34 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
     try {
       setLoading(true)
 
+      // まず早押し専用問題を取得
+      const { data: buzzerQuestion, error: questionError } = await supabase
+        .from("questions")
+        .select("id")
+        .eq("quiz_id", quiz?.id)
+        .eq("type", "quick_response")
+        .eq("content", "早押し専用")
+        .maybeSingle()
+
+      if (questionError && questionError.code !== "PGRST116") {
+        throw questionError
+      }
+
+      if (!buzzerQuestion) {
+        // 早押しデータがない場合は何もしない
+        toast({
+          title: "リセット完了",
+          description: "早押しデータはありません",
+        })
+        setLoading(false)
+        return
+      }
+
       // Delete all buzzer responses
       const { error } = await supabase
         .from("responses")
         .delete()
-        .eq("question_id", quiz?.id)
+        .eq("question_id", buzzerQuestion.id)
         .eq("answer", "早押し")
 
       if (error) throw error
@@ -384,7 +427,7 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 早押し管理 */}
-        <QuizCard title="早押し管理" description="参加者の早押し順序とポイント付与" gradient="orange">
+        <QuizCard title="早押し管理" description="参加者の早押し順序とポイント付与" gradient="yellow">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
