@@ -100,6 +100,57 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
     return () => clearInterval(interval)
   }, [quiz])
 
+  // リアルタイムで早押しリセットを監視
+  useEffect(() => {
+    if (!quiz || !participant) return
+
+    const fetchBuzzerQuestion = async () => {
+      const { data: buzzerQuestion } = await supabase
+        .from("questions")
+        .select("id")
+        .eq("quiz_id", quiz.id)
+        .eq("type", "quick_response")
+        .eq("content", "早押し専用")
+        .maybeSingle()
+
+      return buzzerQuestion
+    }
+
+    const setupRealtimeSubscription = async () => {
+      const buzzerQuestion = await fetchBuzzerQuestion()
+      if (!buzzerQuestion) return
+
+      // responsesテーブルの削除を監視
+      const subscription = supabase
+        .channel("buzzer-reset")
+        .on(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "responses",
+            filter: `question_id=eq.${buzzerQuestion.id}`,
+          },
+          (payload) => {
+            // 自分の早押しが削除されたら状態をリセット
+            if (payload.old && payload.old.participant_id === participant.id) {
+              setHasPressed(false)
+              setResponseTime(null)
+            }
+          },
+        )
+        .subscribe()
+
+      return subscription
+    }
+
+    setupRealtimeSubscription()
+
+    return () => {
+      supabase.channel("buzzer-reset").unsubscribe()
+    }
+  }, [quiz, participant])
+
   // 早押しボタンを押す
   const handleBuzzerPress = async () => {
     if (!participant || hasPressed || pressing) return
