@@ -142,20 +142,23 @@ export default function AdminDashboardPage() {
               gradient={quiz.is_active ? "green" : "blue"}
               footer={
                 <div className="w-full space-y-2">
-                  <div className="flex justify-between">
-                    <Button asChild className="flex-1 mr-2">
+                  <div className="flex gap-2">
+                    <Button asChild className="flex-1">
                       <Link href={`/admin/quiz/${quiz.id}`}>管理する</Link>
                     </Button>
-                    <Button asChild variant="outline" className="flex-1 mr-2">
+                    <Button asChild variant="outline" className="flex-1">
                       <Link href={`/admin/buzzer/${quiz.id}`}>
                         <Bell className="h-4 w-4 mr-1" />
                         早押し
                       </Link>
                     </Button>
+                  </div>
+                  <div className="flex gap-2">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="text-red-500">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="outline" className="text-red-500 w-full">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          削除
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
