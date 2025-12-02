@@ -159,8 +159,8 @@ export default function AdminDashboardPage() {
                         <Button variant="outline" className="text-red-500 w-full">
                           <Trash2 className="h-4 w-4 mr-2" />
                           削除
-                      </Button>
-                    </AlertDialogTrigger>
+                        </Button>
+                      </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>クイズを削除しますか？</AlertDialogTitle>
@@ -188,6 +188,7 @@ export default function AdminDashboardPage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </div>
                 </div>
               }
             >
