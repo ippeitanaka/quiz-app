@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import Link from "next/link"
 import { Bell, Trophy, Award, Clock } from "lucide-react"
+import { createClientSupabase } from "@/lib/utils/client-supabase"
 
 export default function BuzzerPage({ params }: { params: { code: string } }) {
   const searchParams = useSearchParams()
@@ -104,6 +105,9 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
   useEffect(() => {
     if (!quiz || !participant) return
 
+    const supabase = createClientSupabase()
+    if (!supabase) return
+
     const fetchBuzzerQuestion = async () => {
       const { data: buzzerQuestion } = await supabase
         .from("questions")
@@ -131,9 +135,10 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
             table: "responses",
             filter: `question_id=eq.${buzzerQuestion.id}`,
           },
-          (payload) => {
+          (payload: any) => {
             // 自分の早押しが削除されたら状態をリセット
             if (payload.old && payload.old.participant_id === participant.id) {
+              console.log("Buzzer reset detected for participant:", participant.id)
               setHasPressed(false)
               setResponseTime(null)
             }
@@ -144,10 +149,10 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
       return subscription
     }
 
-    setupRealtimeSubscription()
+    const subscription = setupRealtimeSubscription()
 
     return () => {
-      supabase.channel("buzzer-reset").unsubscribe()
+      subscription.then((sub) => sub?.unsubscribe())
     }
   }, [quiz, participant])
 
