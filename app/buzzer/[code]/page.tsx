@@ -1,14 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import Link from "next/link"
 import { Bell, Trophy, Award, Clock } from "lucide-react"
-import { createClientSupabase } from "@/lib/utils/client-supabase"
+import { supabase } from "@/lib/supabase/supabase"
 
-export default function BuzzerPage({ params }: { params: { code: string } }) {
+export default function BuzzerPage() {
+  const params = useParams<{ code: string }>()
+  const code = params?.code
   const searchParams = useSearchParams()
   const router = useRouter()
   const participantId = searchParams.get("participant")
@@ -28,7 +30,13 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
       try {
         // 参加者IDがない場合は参加ページにリダイレクト
         if (!participantId) {
-          router.push(`/join/${params.code}`)
+          router.push(`/join/${code}`)
+          return
+        }
+
+        if (!code) {
+          setError("クイズコードが見つかりません")
+          setLoading(false)
           return
         }
 
@@ -50,7 +58,7 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
         setParticipant(participantData.data)
 
         // Get quiz data
-        const quizResponse = await fetch(`/api/quiz/check-code?code=${params.code}`)
+        const quizResponse = await fetch(`/api/quiz/check-code?code=${code}`)
         if (!quizResponse.ok) {
           setError("クイズ情報が見つかりません")
           setLoading(false)
@@ -74,7 +82,7 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
     }
 
     fetchInitialData()
-  }, [participantId, params.code])
+  }, [participantId, code])
 
   // ランキングを定期的に取得
   useEffect(() => {
@@ -104,9 +112,6 @@ export default function BuzzerPage({ params }: { params: { code: string } }) {
   // リアルタイムで早押しリセットを監視
   useEffect(() => {
     if (!quiz || !participant) return
-
-    const supabase = createClientSupabase()
-    if (!supabase) return
 
     const fetchBuzzerQuestion = async () => {
       const { data: buzzerQuestion } = await supabase

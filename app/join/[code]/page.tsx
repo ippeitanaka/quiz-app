@@ -6,10 +6,11 @@ import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { RefreshCw, AlertCircle, Loader2, ExternalLink, Bug, Bell } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { supabase } from "@/lib/supabase/supabase"
 
 interface Quiz {
   id: string
@@ -20,7 +21,7 @@ interface Quiz {
   description?: string
 }
 
-export default function JoinQuizPage({ params }: { params: { code: string } }) {
+export default function JoinQuizPage() {
   const [name, setName] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -31,6 +32,8 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
   const [retryCount, setRetryCount] = useState(0)
   const [mode, setMode] = useState<"quiz" | "buzzer">("quiz")
   const router = useRouter()
+  const params = useParams<{ code: string }>()
+  const code = params?.code
 
   // クイズ情報を取得（複数の方法を試行）
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
       setError(null)
 
       const debug = {
-        code: params.code,
+        code,
         timestamp: new Date().toISOString(),
         url: window.location.href,
         userAgent: navigator.userAgent,
@@ -49,13 +52,17 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
 
       try {
         console.log("=== FETCHING QUIZ (Attempt", retryCount + 1, ") ===")
-        console.log("Code:", params.code)
+        console.log("Code:", code)
+
+        if (!code) {
+          throw new Error("クイズコードが指定されていません")
+        }
 
         // 方法1: APIエンドポイント経由
         try {
           debug.methods.push({ method: "API", status: "attempting" })
 
-          const apiUrl = `/api/quiz/check-code?code=${encodeURIComponent(params.code)}`
+          const apiUrl = `/api/quiz/check-code?code=${encodeURIComponent(code)}`
           console.log("Trying API:", apiUrl)
 
           const response = await fetch(apiUrl, {
@@ -103,55 +110,34 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
         try {
           debug.methods.push({ method: "Direct Supabase", status: "attempting" })
 
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          console.log("Trying direct Supabase with shared client")
 
-          console.log("Trying direct Supabase:", { hasUrl: !!supabaseUrl, hasKey: !!supabaseKey })
+          const { data, error: supabaseError } = await supabase.from("quizzes").select("*").eq("code", code).maybeSingle()
 
-          if (supabaseUrl && supabaseKey) {
-            const { createClient } = await import("@supabase/supabase-js")
-            const supabase = createClient(supabaseUrl, supabaseKey, {
-              auth: {
-                persistSession: false,
-                autoRefreshToken: false,
-              },
-            })
+          if (supabaseError) {
+            debug.methods[1].status = "failed"
+            debug.methods[1].error = supabaseError.message
+            console.log("Direct Supabase Failed:", supabaseError)
+          } else if (data) {
+            debug.methods[1].status = "success"
+            debug.methods[1].data = data
+            console.log("Direct Supabase Success:", data)
 
-            const { data, error: supabaseError } = await supabase
-              .from("quizzes")
-              .select("*")
-              .eq("code", params.code)
-              .maybeSingle()
+            setQuiz(data)
 
-            if (supabaseError) {
-              debug.methods[1].status = "failed"
-              debug.methods[1].error = supabaseError.message
-              console.log("Direct Supabase Failed:", supabaseError)
-            } else if (data) {
-              debug.methods[1].status = "success"
-              debug.methods[1].data = data
-              console.log("Direct Supabase Success:", data)
-
-              setQuiz(data)
-
-              if (!data.is_active) {
-                setError(
-                  "このクイズは現在アクティブではありません。管理者がクイズをアクティブにするのをお待ちください。",
-                )
-              }
-
-              debug.success = true
-              setDebugInfo(debug)
-              setLoading(false)
-              return
-            } else {
-              debug.methods[1].status = "no_data"
-              console.log("Direct Supabase: No data found")
+            if (!data.is_active) {
+              setError(
+                "このクイズは現在アクティブではありません。管理者がクイズをアクティブにするのをお待ちください。",
+              )
             }
+
+            debug.success = true
+            setDebugInfo(debug)
+            setLoading(false)
+            return
           } else {
-            debug.methods[1].status = "no_env"
-            debug.methods[1].error = "Environment variables not available"
-            console.log("Direct Supabase: Environment variables not available")
+            debug.methods[1].status = "no_data"
+            console.log("Direct Supabase: No data found")
           }
         } catch (directError) {
           debug.methods[1].status = "error"
@@ -188,7 +174,7 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
     }, 5000)
 
     return () => clearInterval(intervalId)
-  }, [params.code, retryCount])
+  }, [code, retryCount])
 
   // 手動再試行
   const handleRetry = () => {
@@ -258,8 +244,8 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
       // クイズページまたは早押しページに遷移
       const playUrl =
         mode === "buzzer"
-          ? `/buzzer/${params.code}?participant=${responseData.data.id}`
-          : `/play/${params.code}?participant=${responseData.data.id}`
+          ? `/buzzer/${code}?participant=${responseData.data.id}`
+          : `/play/${code}?participant=${responseData.data.id}`
       console.log("Redirecting to:", playUrl)
       router.push(playUrl)
     } catch (err) {
@@ -277,7 +263,7 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
       <div className="flex flex-col items-center justify-center py-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
         <p>クイズ情報を読み込み中...</p>
-        <p className="text-xs text-muted-foreground mt-2">コード: {params.code}</p>
+        <p className="text-xs text-muted-foreground mt-2">コード: {code}</p>
         {retryCount > 0 && <p className="text-xs text-muted-foreground">再試行中... ({retryCount + 1}回目)</p>}
       </div>
     )
@@ -456,7 +442,7 @@ export default function JoinQuizPage({ params }: { params: { code: string } }) {
   return (
     <div className="container flex flex-col items-center justify-center min-h-screen py-12">
       <div className="w-full max-w-md">
-        <QuizCard title="クイズに参加" description={`クイズコード: ${params.code}`} gradient="blue">
+        <QuizCard title="クイズに参加" description={`クイズコード: ${code ?? ""}`} gradient="blue">
           {content}
         </QuizCard>
       </div>

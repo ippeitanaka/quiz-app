@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import Link from "next/link"
@@ -13,7 +13,9 @@ import { CheckCircle, XCircle, Clock } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // import { SupabaseConfigCheck } from "@/components/supabase-config-check"
 
-export default function PlayQuizPage({ params }: { params: { code: string } }) {
+export default function PlayQuizPage() {
+  const params = useParams<{ code: string }>()
+  const code = params?.code
   const searchParams = useSearchParams()
   const participantId = searchParams.get("participant")
 
@@ -59,7 +61,13 @@ export default function PlayQuizPage({ params }: { params: { code: string } }) {
         setParticipant(participantData.data)
 
         // Get quiz data via API
-        const quizResponse = await fetch(`/api/quiz/check-code?code=${params.code}`)
+        if (!code) {
+          setError("クイズコードが見つかりません")
+          setLoading(false)
+          return
+        }
+
+        const quizResponse = await fetch(`/api/quiz/check-code?code=${code}`)
         if (!quizResponse.ok) {
           setError("クイズ情報が見つかりません")
           setLoading(false)
@@ -156,7 +164,7 @@ export default function PlayQuizPage({ params }: { params: { code: string } }) {
     }
 
     fetchInitialData()
-  }, [participantId, params.code])
+  }, [participantId, code])
 
   // Subscribe to results revealed changes
   useEffect(() => {
