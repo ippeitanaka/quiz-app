@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth/auth-context"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "@/lib/supabase/supabase"
 
 export default function CreateQuizPage() {
   const [title, setTitle] = useState("")
@@ -48,21 +48,7 @@ export default function CreateQuizPage() {
       console.log("Creating quiz with title:", title)
       console.log("User ID:", user.id)
 
-      // 環境変数の確認
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-      console.log("Environment variables check:", {
-        url_exists: !!supabaseUrl,
-        key_exists: !!supabaseAnonKey,
-      })
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error("Supabase環境変数が設定されていません")
-      }
-
-      // Supabaseクライアントを直接作成
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
+      console.log("Using shared Supabase client")
 
       // クイズコードを生成（4桁の数字）
       const generateQuizCode = () => {

@@ -24,23 +24,53 @@ function isValidSupabaseUrl(url: string): boolean {
   }
 }
 
-// フォールバック値（本番環境では使用されない）
-const fallbackUrl = "https://placeholder.supabase.co"
-const fallbackKey = "placeholder-key"
+function createMisconfiguredClient(reason: string) {
+  const error = new Error(reason)
+
+  return {
+    from: () => ({
+      select: () => Promise.resolve({ data: null, error }),
+      insert: () => Promise.resolve({ data: null, error }),
+      update: () => Promise.resolve({ data: null, error }),
+      delete: () => Promise.resolve({ data: null, error }),
+      eq: () => ({
+        single: () => Promise.resolve({ data: null, error }),
+        maybeSingle: () => Promise.resolve({ data: null, error }),
+      }),
+    }),
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error }),
+      signOut: () => Promise.resolve({ error }),
+    },
+  } as any
+}
+
+function resolvePublicCredentials() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { error: "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY" }
+  }
+
+  if (!isValidSupabaseUrl(supabaseUrl) || supabaseUrl.includes("placeholder.supabase.co")) {
+    return { error: `Invalid NEXT_PUBLIC_SUPABASE_URL: ${supabaseUrl}` }
+  }
+
+  return { url: supabaseUrl, key: supabaseAnonKey }
+}
 
 // Supabaseクライアントの作成
 export const supabase = (() => {
   try {
-    // 環境変数が設定されていない場合はフォールバック値を使用
-    const url = supabaseUrl || fallbackUrl
-    const key = supabaseAnonKey || fallbackKey
-
-    // 環境変数が設定されていない場合は警告（開発環境のみ）
-    if ((!supabaseUrl || !supabaseAnonKey) && process.env.NODE_ENV === "development") {
-      console.warn("Using fallback Supabase configuration - this will not work for actual operations")
+    const resolved = resolvePublicCredentials()
+    if ("error" in resolved) {
+      if (process.env.NODE_ENV === "development") {
+        console.error(resolved.error)
+      }
+      return createMisconfiguredClient(resolved.error)
     }
 
-    return createClient(url, key, {
+    return createClient(resolved.url, resolved.key, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -73,10 +103,17 @@ export const supabase = (() => {
 // Admin client（サーバーサイド用）
 export const adminSupabase = (() => {
   try {
-    const url = supabaseUrl || fallbackUrl
-    const key = serviceRoleKey || supabaseAnonKey || fallbackKey
+    const resolved = resolvePublicCredentials()
+    if ("error" in resolved) {
+      if (process.env.NODE_ENV === "development") {
+        console.error(resolved.error)
+      }
+      return createMisconfiguredClient(resolved.error)
+    }
 
-    return createClient(url, key, {
+    const key = serviceRoleKey || resolved.key
+
+    return createClient(resolved.url, key, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
@@ -84,7 +121,7 @@ export const adminSupabase = (() => {
     })
   } catch (error) {
     console.error("Failed to create Admin Supabase client:", error)
-    return supabase // フォールバックとして通常のクライアントを使用
+    return createMisconfiguredClient(error instanceof Error ? error.message : "Admin Supabase client init failed")
   }
 })()
 
