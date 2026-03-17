@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import { supabase } from "@/lib/supabase/supabase"
@@ -46,7 +46,7 @@ interface BuzzerResponse {
   points_awarded: number
 }
 
-export default function AdminBuzzerPage({ params }: { params: { id: string } }) {
+export default function AdminBuzzerPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [participants, setParticipants] = useState<Participant[]>([])
   const [buzzerResponses, setBuzzerResponses] = useState<BuzzerResponse[]>([])
@@ -56,6 +56,8 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
   const [customPoints, setCustomPoints] = useState<Record<string, number>>({})
   const [awardingPoints, setAwardingPoints] = useState<string | null>(null)
   const router = useRouter()
+  const params = useParams<{ id: string }>()
+  const quizId = params?.id
   const { user, isLoading } = useAuth()
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
@@ -74,7 +76,11 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
 
     const fetchQuiz = async () => {
       try {
-        const { data, error } = await supabase.from("quizzes").select("*").eq("id", params.id).single()
+        if (!quizId) {
+          throw new Error("クイズIDが指定されていません")
+        }
+
+        const { data, error } = await supabase.from("quizzes").select("*").eq("id", quizId).single()
 
         if (error) throw error
         if (!data) throw new Error("クイズが見つかりませんでした")
@@ -97,7 +103,7 @@ export default function AdminBuzzerPage({ params }: { params: { id: string } }) 
     }
 
     fetchQuiz()
-  }, [params.id, isLoading, user, baseUrl])
+  }, [quizId, isLoading, user, baseUrl])
 
   // Load participants
   useEffect(() => {

@@ -250,7 +250,13 @@ ORDER BY table_name;
     if (!supabaseUrl || !supabaseKey) {
       throw new Error("Supabase URL and Key are required")
     }
-    return createClient(supabaseUrl, supabaseKey)
+    return createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    })
   }
 
   // SQLの実行

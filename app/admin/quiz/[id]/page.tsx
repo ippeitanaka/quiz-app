@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { QuizCard } from "@/components/ui/quiz-card"
@@ -35,7 +35,7 @@ import {
 import { QuickResponseManager } from "@/components/admin/quick-response-manager"
 import { Checkbox } from "@/components/ui/checkbox"
 
-export default function AdminQuizPage({ params }: { params: { id: string } }) {
+export default function AdminQuizPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
@@ -63,6 +63,8 @@ export default function AdminQuizPage({ params }: { params: { id: string } }) {
   const [allowMultipleActive, setAllowMultipleActive] = useState(false)
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const params = useParams<{ id: string }>()
+  const quizId = params?.id
 
   // 環境変数が設定されていない場合は window.location.origin を使用
   const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
@@ -81,13 +83,13 @@ export default function AdminQuizPage({ params }: { params: { id: string } }) {
 
     const fetchQuiz = async () => {
       try {
-        console.log("Fetching quiz with ID:", params.id)
+        console.log("Fetching quiz with ID:", quizId)
 
-        if (!params.id) {
+        if (!quizId) {
           throw new Error("クイズIDが指定されていません")
         }
 
-        const { data, error } = await supabase.from("quizzes").select("*").eq("id", params.id).single()
+        const { data, error } = await supabase.from("quizzes").select("*").eq("id", quizId).single()
 
         console.log("Quiz fetch result:", { data, error })
 
@@ -122,7 +124,7 @@ export default function AdminQuizPage({ params }: { params: { id: string } }) {
     }
 
     fetchQuiz()
-  }, [params.id, isLoading, user, baseUrl])
+  }, [quizId, isLoading, user, baseUrl])
 
   // Load questions
   useEffect(() => {
