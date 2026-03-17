@@ -27,7 +27,15 @@ export default function AdminLoginPage() {
       const { error } = await signIn(email, password)
 
       if (error) {
-        setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。")
+        const normalized = (error.message || "").toLowerCase()
+
+        if (normalized.includes("invalid login credentials")) {
+          setError("ログイン失敗: メールアドレスまたはパスワードが正しくありません。")
+        } else if (normalized.includes("email not confirmed")) {
+          setError("ログイン失敗: メール確認が未完了です。SupabaseのAuth Usersで確認状態をチェックしてください。")
+        } else {
+          setError(`ログインに失敗しました: ${error.message}`)
+        }
       } else {
         router.push("/admin/dashboard")
       }
