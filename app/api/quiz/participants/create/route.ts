@@ -4,10 +4,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { quizId, name } = body
+    const trimmedName = typeof name === "string" ? name.trim() : ""
 
-    console.log("API: Creating participant:", { quizId, name })
+    console.log("API: Creating participant:", { quizId, name: trimmedName })
 
-    if (!quizId || !name) {
+    if (!quizId || !trimmedName) {
       return NextResponse.json(
         {
           success: false,
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 名前の長さチェック
-    if (name.length > 20) {
+    if (trimmedName.length > 20) {
       return NextResponse.json(
         {
           success: false,
@@ -30,14 +31,16 @@ export async function POST(request: NextRequest) {
 
     // 環境変数の確認
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     console.log("Environment check:", {
       hasUrl: !!supabaseUrl,
+      hasAnonKey: !!supabaseAnonKey,
       hasServiceKey: !!supabaseServiceKey,
     })
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || (!supabaseServiceKey && !supabaseAnonKey)) {
       return NextResponse.json(
         {
           success: false,
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     // Supabaseクライアントを作成
     const { createClient } = await import("@supabase/supabase-js")
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey!, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
       .from("participants")
       .select("id")
       .eq("quiz_id", quizId)
-      .eq("name", name)
+      .eq("name", trimmedName)
       .maybeSingle()
 
     console.log("Name check result:", { existingParticipant, checkError })
@@ -124,7 +127,7 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           quiz_id: quizId,
-          name: name.trim(),
+          name: trimmedName,
           score: 0,
         },
       ])
@@ -139,6 +142,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "参加者の作成中にエラーが発生しました",
+          code: createError?.code,
           details: createError?.message,
         },
         { status: 500 },
