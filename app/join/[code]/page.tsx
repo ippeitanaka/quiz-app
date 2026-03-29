@@ -35,6 +35,20 @@ export default function JoinQuizPage() {
   const params = useParams<{ code: string }>()
   const code = params?.code
 
+  const getParticipantStorageKey = (quizId: string, participantName: string) => {
+    return `quiz-participant:${quizId}:${participantName.trim().toLowerCase()}`
+  }
+
+  const getStoredParticipantId = (quizId: string, participantName: string) => {
+    if (typeof window === "undefined") return null
+    return window.localStorage.getItem(getParticipantStorageKey(quizId, participantName))
+  }
+
+  const saveParticipantId = (quizId: string, participantName: string, participantId: string) => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(getParticipantStorageKey(quizId, participantName), participantId)
+  }
+
   // クイズ情報を取得（複数の方法を試行）
   useEffect(() => {
     async function fetchQuiz() {
@@ -186,7 +200,9 @@ export default function JoinQuizPage() {
     e.preventDefault()
     setError(null)
 
-    if (!name.trim()) {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
       setError("名前を入力してください")
       return
     }
@@ -204,9 +220,33 @@ export default function JoinQuizPage() {
     setSubmitting(true)
 
     try {
+      // 同じ端末で以前参加していた場合は、既存参加者として再参加させる
+      const storedParticipantId = getStoredParticipantId(quiz.id, trimmedName)
+
+      if (storedParticipantId) {
+        const participantResponse = await fetch(`/api/quiz/participants?id=${storedParticipantId}`)
+        const participantData = await participantResponse.json()
+
+        if (
+          participantResponse.ok &&
+          participantData?.data &&
+          participantData.data.quiz_id === quiz.id &&
+          participantData.data.name === trimmedName
+        ) {
+          const playUrl =
+            mode === "buzzer"
+              ? `/buzzer/${code}?participant=${storedParticipantId}`
+              : mode === "question_corner"
+                ? `/question-corner/${code}?participant=${storedParticipantId}`
+                : `/play/${code}?participant=${storedParticipantId}`
+          router.push(playUrl)
+          return
+        }
+      }
+
       console.log("=== CREATING PARTICIPANT ===")
       console.log("Quiz ID:", quiz.id)
-      console.log("Name:", name.trim())
+      console.log("Name:", trimmedName)
 
       // APIエンドポイント経由で参加者を作成
       const response = await fetch("/api/quiz/participants/create", {
@@ -216,7 +256,7 @@ export default function JoinQuizPage() {
         },
         body: JSON.stringify({
           quizId: quiz.id,
-          name: name.trim(),
+          name: trimmedName,
         }),
       })
 
@@ -240,6 +280,9 @@ export default function JoinQuizPage() {
       }
 
       console.log("Participant created successfully:", responseData.data.id)
+
+      // 次回同じ端末から復帰できるように参加者IDを保持
+      saveParticipantId(quiz.id, trimmedName, responseData.data.id)
 
       // クイズページまたは早押しページに遷移
       const playUrl =
