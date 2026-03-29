@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Timer } from "@/components/quiz/timer"
 import { CheckCircle, XCircle, Clock } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ParticipantModeNav } from "@/components/quiz/participant-mode-nav"
 // import { SupabaseConfigCheck } from "@/components/supabase-config-check"
 
 export default function PlayQuizPage() {
@@ -462,6 +463,8 @@ export default function PlayQuizPage() {
   return (
     <div className="container flex flex-col items-center justify-center min-h-screen py-8 px-4" style={themeStyles}>
       <div className="w-full max-w-md">
+        {code && participantId && <ParticipantModeNav code={code} participantId={participantId} />}
+
         <div className="flex justify-between items-center mb-4">
           {quiz.logo_url ? (
             <img src={quiz.logo_url || "/placeholder.svg"} alt="Quiz logo" className="h-10 object-contain" />

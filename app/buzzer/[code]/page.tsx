@@ -7,6 +7,7 @@ import { QuizCard } from "@/components/ui/quiz-card"
 import Link from "next/link"
 import { Bell, Trophy, Award, Clock } from "lucide-react"
 import { supabase } from "@/lib/supabase/supabase"
+import { ParticipantModeNav } from "@/components/quiz/participant-mode-nav"
 
 export default function BuzzerPage() {
   const params = useParams<{ code: string }>()
@@ -220,6 +221,8 @@ export default function BuzzerPage() {
   return (
     <div className="container flex flex-col items-center justify-center min-h-screen py-8 px-4">
       <div className="w-full max-w-2xl space-y-6">
+        {code && participantId && <ParticipantModeNav code={code} participantId={participantId} />}
+
         {/* ヘッダー */}
         <div className="flex justify-between items-center">
           <div>

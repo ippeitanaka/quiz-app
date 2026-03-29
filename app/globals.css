@@ -3,57 +3,69 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 325 82% 75%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 185 82% 75%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --background: 46 49% 95%;
+  --foreground: 155 28% 17%;
+  --card: 44 56% 97%;
+  --card-foreground: 155 28% 17%;
+  --popover: 44 56% 97%;
+  --popover-foreground: 155 28% 17%;
+  --primary: 165 39% 31%;
+  --primary-foreground: 42 67% 96%;
+  --secondary: 187 34% 89%;
+  --secondary-foreground: 165 39% 22%;
+  --muted: 88 33% 91%;
+  --muted-foreground: 165 17% 35%;
+  --accent: 39 72% 74%;
+  --accent-foreground: 165 39% 22%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 325 82% 75%;
+  --border: 149 20% 76%;
+  --input: 149 20% 76%;
+  --ring: 165 39% 31%;
   --radius: 1rem;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 325 82% 75%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 185 82% 75%;
-  --accent-foreground: 210 40% 98%;
+  --background: 170 27% 11%;
+  --foreground: 45 42% 94%;
+  --card: 168 26% 14%;
+  --card-foreground: 45 42% 94%;
+  --popover: 168 26% 14%;
+  --popover-foreground: 45 42% 94%;
+  --primary: 43 66% 63%;
+  --primary-foreground: 170 27% 11%;
+  --secondary: 171 18% 24%;
+  --secondary-foreground: 45 42% 94%;
+  --muted: 171 18% 22%;
+  --muted-foreground: 45 23% 72%;
+  --accent: 180 24% 39%;
+  --accent-foreground: 45 42% 94%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 325 82% 75%;
+  --border: 168 18% 28%;
+  --input: 168 18% 28%;
+  --ring: 43 66% 63%;
 }
 
 body {
-  font-family: "Baloo 2", cursive;
-  background: linear-gradient(45deg, rgba(255, 180, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(135deg, rgba(180, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(225deg, rgba(255, 255, 180, 0.2) 0%, rgba(255, 255, 255, 0) 70%),
-    linear-gradient(315deg, rgba(180, 180, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+  font-family: var(--font-body), "Hiragino Maru Gothic ProN", sans-serif;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(143, 202, 173, 0.32), transparent 33%),
+    radial-gradient(circle at 82% 15%, rgba(255, 226, 156, 0.3), transparent 40%),
+    radial-gradient(circle at 48% 86%, rgba(166, 205, 234, 0.25), transparent 38%),
+    linear-gradient(180deg, #f7f1de 0%, #e7f0dd 43%, #dfead5 100%);
   background-attachment: fixed;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-title), "Yu Mincho", serif;
+  letter-spacing: 0.01em;
 }
 
 @layer base {
@@ -66,10 +78,11 @@ body {
 }
 
 .cute-shadow {
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  box-shadow: 0 10px 24px rgba(43, 74, 56, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.34) inset;
 }
 
 .cute-card {
-  @apply rounded-3xl bg-white/90 p-6 cute-shadow;
+  @apply rounded-3xl p-6 cute-shadow;
+  background: linear-gradient(180deg, rgba(255, 255, 250, 0.93), rgba(247, 242, 225, 0.92));
   backdrop-filter: blur(10px);
 }

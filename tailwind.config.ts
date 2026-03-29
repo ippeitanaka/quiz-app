@@ -54,11 +54,11 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
         pastel: {
-          pink: "#FFB4E6",
-          blue: "#B4D8FF",
-          green: "#B4FFCE",
-          yellow: "#FFEEB4",
-          purple: "#D8B4FF",
+          pink: "#E8B88D",
+          blue: "#9CC7CF",
+          green: "#A8C99A",
+          yellow: "#EFD29A",
+          purple: "#B4B2CE",
         },
       },
       borderRadius: {

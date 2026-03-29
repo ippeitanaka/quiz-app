@@ -96,3 +96,48 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { id, ids } = body as { id?: string; ids?: string[] }
+
+    if (!id && (!ids || ids.length === 0)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "id or ids is required",
+        },
+        { status: 400 },
+      )
+    }
+
+    if (id) {
+      const { error } = await adminSupabase.from("question_corner_posts").delete().eq("id", id)
+
+      if (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, deletedCount: 1 })
+    }
+
+    const safeIds = (ids || []).filter((value) => typeof value === "string" && value.length > 0)
+
+    const { error } = await adminSupabase.from("question_corner_posts").delete().in("id", safeIds)
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, deletedCount: safeIds.length })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
+  }
+}

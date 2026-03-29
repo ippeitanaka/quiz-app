@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { QuizCard } from "@/components/ui/quiz-card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MessageSquare, Plus, Trash2, Loader2, Send } from "lucide-react"
+import { ParticipantModeNav } from "@/components/quiz/participant-mode-nav"
 
 interface QuizData {
   id: string
@@ -179,6 +180,8 @@ export default function QuestionCornerPage() {
   return (
     <div className="container flex min-h-screen items-center justify-center py-12">
       <div className="w-full max-w-2xl">
+        {code && participantId && <ParticipantModeNav code={code} participantId={participantId} />}
+
         <QuizCard title="質問コーナー" description={`クイズ: ${quiz?.title ?? ""}`} gradient="yellow">
           <div className="space-y-5">
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
@@ -232,7 +235,12 @@ export default function QuestionCornerPage() {
             )}
 
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <Button type="button" variant="outline" onClick={() => router.push(`/join/${code}`)} disabled={submitting}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/play/${code}?participant=${participantId}`)}
+                disabled={submitting}
+              >
                 戻る
               </Button>
               <Button type="button" onClick={handleSubmit} disabled={submitting}>

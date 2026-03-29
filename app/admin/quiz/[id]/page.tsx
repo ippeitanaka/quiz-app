@@ -74,6 +74,10 @@ export default function AdminQuizPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [questionCornerPosts, setQuestionCornerPosts] = useState<QuestionCornerPost[]>([])
   const [questionCornerLoading, setQuestionCornerLoading] = useState(false)
+  const [selectedQuestionPostIds, setSelectedQuestionPostIds] = useState<string[]>([])
+  const [deletingQuestionPostId, setDeletingQuestionPostId] = useState<string | null>(null)
+  const [bulkDeletingQuestionPosts, setBulkDeletingQuestionPosts] = useState(false)
+  const [deletingAllParticipants, setDeletingAllParticipants] = useState(false)
   const params = useParams<{ id: string }>()
   const quizId = params?.id
 
@@ -811,6 +815,137 @@ export default function AdminQuizPage() {
     }
   }
 
+  const deleteAllParticipants = async () => {
+    if (participants.length === 0) return
+
+    try {
+      setDeletingAllParticipants(true)
+
+      const response = await fetch("/api/quiz/participants/bulk-delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participantIds: participants.map((p) => p.id),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "全参加者削除に失敗しました")
+      }
+
+      setParticipants([])
+      setSelectedParticipants([])
+
+      toast({
+        title: "全参加者を削除しました",
+        description: data.message || "参加者をすべて削除しました",
+      })
+    } catch (err) {
+      console.error("Error deleting all participants:", err)
+      toast({
+        title: "エラー",
+        description: err instanceof Error ? err.message : "全参加者削除に失敗しました",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingAllParticipants(false)
+    }
+  }
+
+  const toggleSelectAllQuestionPosts = () => {
+    if (selectedQuestionPostIds.length === questionCornerPosts.length) {
+      setSelectedQuestionPostIds([])
+    } else {
+      setSelectedQuestionPostIds(questionCornerPosts.map((post) => post.id))
+    }
+  }
+
+  const toggleQuestionPostSelection = (postId: string) => {
+    setSelectedQuestionPostIds((prev) =>
+      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId],
+    )
+  }
+
+  const deleteQuestionPost = async (postId: string) => {
+    try {
+      setDeletingQuestionPostId(postId)
+
+      const response = await fetch("/api/quiz/question-corner", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: postId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "質問の削除に失敗しました")
+      }
+
+      setQuestionCornerPosts((prev) => prev.filter((post) => post.id !== postId))
+      setSelectedQuestionPostIds((prev) => prev.filter((id) => id !== postId))
+
+      toast({
+        title: "質問を削除しました",
+        description: "質問コーナーから投稿を削除しました",
+      })
+    } catch (err) {
+      console.error("Error deleting question post:", err)
+      toast({
+        title: "エラー",
+        description: err instanceof Error ? err.message : "質問の削除に失敗しました",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingQuestionPostId(null)
+    }
+  }
+
+  const bulkDeleteQuestionPosts = async () => {
+    if (selectedQuestionPostIds.length === 0) return
+
+    try {
+      setBulkDeletingQuestionPosts(true)
+
+      const response = await fetch("/api/quiz/question-corner", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: selectedQuestionPostIds }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "質問の一括削除に失敗しました")
+      }
+
+      setQuestionCornerPosts((prev) => prev.filter((post) => !selectedQuestionPostIds.includes(post.id)))
+      setSelectedQuestionPostIds([])
+
+      toast({
+        title: "一括削除完了",
+        description: `${data.deletedCount || 0}件の質問を削除しました`,
+      })
+    } catch (err) {
+      console.error("Error bulk deleting question posts:", err)
+      toast({
+        title: "エラー",
+        description: err instanceof Error ? err.message : "質問の一括削除に失敗しました",
+        variant: "destructive",
+      })
+    } finally {
+      setBulkDeletingQuestionPosts(false)
+    }
+  }
+
   // 参加者タブの内容
   const renderParticipantsTab = () => {
     return (
@@ -836,35 +971,64 @@ export default function AdminQuizPage() {
                       </Label>
                     </div>
                   </div>
-                  {selectedParticipants.length > 0 && (
+                  <div className="flex items-center gap-2">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-red-500">
-                          <Users className="h-4 w-4 mr-1" />
-                          選択した参加者を削除 ({selectedParticipants.length}人)
+                        <Button variant="outline" size="sm" className="text-red-500" disabled={participants.length === 0}>
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          全参加者を削除
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>参加者を一括削除しますか？</AlertDialogTitle>
+                          <AlertDialogTitle>全参加者を削除しますか？</AlertDialogTitle>
                           <AlertDialogDescription>
-                            選択した{selectedParticipants.length}
-                            人の参加者とその回答データがすべて削除されます。この操作は元に戻せません。
+                            参加者{participants.length}人と回答データがすべて削除されます。この操作は元に戻せません。
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>キャンセル</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={bulkDeleteParticipants}
-                            disabled={bulkDeleting}
+                            onClick={deleteAllParticipants}
+                            disabled={deletingAllParticipants}
                             className="bg-red-500 hover:bg-red-600"
                           >
-                            {bulkDeleting ? "削除中..." : "削除する"}
+                            {deletingAllParticipants ? "削除中..." : "全削除する"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  )}
+
+                    {selectedParticipants.length > 0 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-red-500">
+                            <Users className="h-4 w-4 mr-1" />
+                            選択した参加者を削除 ({selectedParticipants.length}人)
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>参加者を一括削除しますか？</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              選択した{selectedParticipants.length}
+                              人の参加者とその回答データがすべて削除されます。この操作は元に戻せません。
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={bulkDeleteParticipants}
+                              disabled={bulkDeleting}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              {bulkDeleting ? "削除中..." : "削除する"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -936,19 +1100,100 @@ export default function AdminQuizPage() {
             ) : questionCornerPosts.length === 0 ? (
               <p className="text-center py-8 text-muted-foreground">まだ質問の投稿はありません。</p>
             ) : (
-              <div className="space-y-3">
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="select-all-question-posts"
+                      checked={selectedQuestionPostIds.length === questionCornerPosts.length}
+                      onCheckedChange={toggleSelectAllQuestionPosts}
+                    />
+                    <Label htmlFor="select-all-question-posts" className="text-sm">
+                      全選択 ({selectedQuestionPostIds.length}/{questionCornerPosts.length})
+                    </Label>
+                  </div>
+
+                  {selectedQuestionPostIds.length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-red-500">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          選択した質問を削除 ({selectedQuestionPostIds.length}件)
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>質問を一括削除しますか？</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            選択した{selectedQuestionPostIds.length}件の質問を削除します。この操作は元に戻せません。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={bulkDeleteQuestionPosts}
+                            disabled={bulkDeletingQuestionPosts}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            {bulkDeletingQuestionPosts ? "削除中..." : "削除する"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+
+                <div className="space-y-3">
                 {questionCornerPosts.map((post, index) => (
                   <div key={post.id} className="rounded-lg border bg-white p-4 shadow-sm">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-semibold">#{questionCornerPosts.length - index} {post.participant_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(post.created_at).toLocaleString("ja-JP")}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedQuestionPostIds.includes(post.id)}
+                          onCheckedChange={() => toggleQuestionPostSelection(post.id)}
+                        />
+                        <p className="text-sm font-semibold">#{questionCornerPosts.length - index} {post.participant_name}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleString("ja-JP")}</p>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-red-500" disabled={deletingQuestionPostId === post.id}>
+                              {deletingQuestionPostId === post.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>この質問を削除しますか？</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                投稿者: {post.participant_name}
+                                <br />
+                                この質問は元に戻せません。
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteQuestionPost(post.id)}
+                                className="bg-red-500 hover:bg-red-600"
+                                disabled={deletingQuestionPostId === post.id}
+                              >
+                                削除する
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     <p className="text-sm leading-relaxed">{post.content}</p>
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         </QuizCard>
