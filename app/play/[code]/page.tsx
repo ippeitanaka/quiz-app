@@ -459,6 +459,11 @@ export default function PlayQuizPage() {
   }
 
   const currentQuestion = visibleQuestions[currentQuestionIndex] || null
+  const currentQuestionNumber = currentQuestion
+    ? typeof currentQuestion.order === "number"
+      ? currentQuestion.order + 1
+      : currentQuestionIndex + 1
+    : 1
 
   return (
     <div className="container flex flex-col items-center justify-center min-h-screen py-8 px-4" style={themeStyles}>
@@ -509,7 +514,7 @@ export default function PlayQuizPage() {
                     value={`question-${index}`}
                     className={`${hasAnswered[q.id] ? "bg-green-100" : ""}`}
                   >
-                    {index + 1}
+                    {typeof q.order === "number" ? q.order + 1 : index + 1}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -517,7 +522,7 @@ export default function PlayQuizPage() {
 
             {currentQuestion && (
               <QuizCard
-                title={`問題 #${currentQuestionIndex + 1}`}
+                title={`問題 #${currentQuestionNumber}`}
                 description={hasAnswered[currentQuestion.id] ? "回答済み" : `${currentQuestion.points}点の問題`}
                 gradient={
                   hasAnswered[currentQuestion.id] && resultsRevealed[currentQuestion.id]
