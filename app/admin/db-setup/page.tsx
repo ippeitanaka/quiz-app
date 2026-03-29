@@ -100,6 +100,19 @@ CREATE TABLE IF NOT EXISTS teams (
   name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 質問コーナー投稿テーブル
+CREATE TABLE IF NOT EXISTS question_corner_posts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  participant_id UUID NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+  participant_name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS question_corner_posts_quiz_idx ON question_corner_posts (quiz_id);
+CREATE INDEX IF NOT EXISTS question_corner_posts_created_at_idx ON question_corner_posts (created_at DESC);
   `
 
   // 関数とRLSポリシー作成用のSQL
@@ -141,6 +154,7 @@ ALTER TABLE responses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE active_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE media ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE question_corner_posts ENABLE ROW LEVEL SECURITY;
 
 -- Public access policies (for anonymous users)
 CREATE POLICY "Public quizzes are viewable by everyone" ON quizzes
@@ -166,6 +180,12 @@ CREATE POLICY "Media can be viewed by everyone" ON media
 
 CREATE POLICY "Teams can be viewed by everyone" ON teams
   FOR SELECT USING (true);
+
+CREATE POLICY "Question corner posts are viewable by everyone" ON question_corner_posts
+  FOR SELECT USING (true);
+
+CREATE POLICY "Question corner posts can be inserted by everyone" ON question_corner_posts
+  FOR INSERT WITH CHECK (true);
 
 -- Authenticated user policies
 CREATE POLICY "Authenticated users can create quizzes" ON quizzes

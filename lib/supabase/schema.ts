@@ -62,3 +62,12 @@ export type Response = {
   responded_at: string
   time_taken?: number
 }
+
+export type QuestionCornerPost = {
+  id: string
+  quiz_id: string
+  participant_id: string
+  participant_name: string
+  content: string
+  created_at: string
+}

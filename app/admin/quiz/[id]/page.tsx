@@ -35,6 +35,15 @@ import {
 import { QuickResponseManager } from "@/components/admin/quick-response-manager"
 import { Checkbox } from "@/components/ui/checkbox"
 
+type QuestionCornerPost = {
+  id: string
+  quiz_id: string
+  participant_id: string
+  participant_name: string
+  content: string
+  created_at: string
+}
+
 export default function AdminQuizPage() {
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -63,6 +72,8 @@ export default function AdminQuizPage() {
   const [allowMultipleActive, setAllowMultipleActive] = useState(false)
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [questionCornerPosts, setQuestionCornerPosts] = useState<QuestionCornerPost[]>([])
+  const [questionCornerLoading, setQuestionCornerLoading] = useState(false)
   const params = useParams<{ id: string }>()
   const quizId = params?.id
 
@@ -315,6 +326,34 @@ export default function AdminQuizPage() {
       fetchAnalytics()
     }
   }, [quiz, questions, participants, teams])
+
+  // Load question corner posts
+  useEffect(() => {
+    if (!quiz) return
+
+    const fetchQuestionCornerPosts = async () => {
+      try {
+        setQuestionCornerLoading(true)
+        const response = await fetch(`/api/quiz/question-corner?quizId=${quiz.id}`)
+        const data = await response.json()
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "質問の取得に失敗しました")
+        }
+
+        setQuestionCornerPosts(data.data || [])
+      } catch (err) {
+        console.error("Error fetching question corner posts:", err)
+      } finally {
+        setQuestionCornerLoading(false)
+      }
+    }
+
+    fetchQuestionCornerPosts()
+    const interval = setInterval(fetchQuestionCornerPosts, 5000)
+
+    return () => clearInterval(interval)
+  }, [quiz])
 
   // Toggle quiz active state
   const toggleQuizActive = async () => {
@@ -884,6 +923,39 @@ export default function AdminQuizPage() {
     )
   }
 
+  const renderQuestionCornerTab = () => {
+    return (
+      <div className="space-y-6">
+        <QuizCard title="質問コーナー" description="参加者から届いた質問一覧" gradient="yellow">
+          <div className="space-y-4">
+            {questionCornerLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                読み込み中...
+              </div>
+            ) : questionCornerPosts.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">まだ質問の投稿はありません。</p>
+            ) : (
+              <div className="space-y-3">
+                {questionCornerPosts.map((post, index) => (
+                  <div key={post.id} className="rounded-lg border bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-semibold">#{questionCornerPosts.length - index} {post.participant_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(post.created_at).toLocaleString("ja-JP")}
+                      </p>
+                    </div>
+                    <p className="text-sm leading-relaxed">{post.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </QuizCard>
+      </div>
+    )
+  }
+
   if (isLoading || !user) {
     return (
       <div className="container flex items-center justify-center min-h-screen">
@@ -1020,6 +1092,7 @@ export default function AdminQuizPage() {
         <TabsList className="mb-4">
           <TabsTrigger value="questions">問題</TabsTrigger>
           <TabsTrigger value="participants">参加者 ({participants.length})</TabsTrigger>
+          <TabsTrigger value="question-corner">質問コーナー ({questionCornerPosts.length})</TabsTrigger>
           <TabsTrigger value="theme">テーマ設定</TabsTrigger>
           <TabsTrigger value="teams">チーム設定</TabsTrigger>
           <TabsTrigger value="analytics">分析</TabsTrigger>
@@ -1330,6 +1403,8 @@ export default function AdminQuizPage() {
         </TabsContent>
 
         <TabsContent value="participants">{renderParticipantsTab()}</TabsContent>
+
+        <TabsContent value="question-corner">{renderQuestionCornerTab()}</TabsContent>
 
         <TabsContent value="theme">
           <ThemeSelector

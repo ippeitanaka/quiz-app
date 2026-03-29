@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { QuizCard } from "@/components/ui/quiz-card"
 import { useParams, useRouter } from "next/navigation"
-import { RefreshCw, AlertCircle, Loader2, ExternalLink, Bug, Bell } from "lucide-react"
+import { RefreshCw, AlertCircle, Loader2, ExternalLink, Bug, Bell, MessageSquare } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { supabase } from "@/lib/supabase/supabase"
@@ -30,7 +30,7 @@ export default function JoinQuizPage() {
   const [debugInfo, setDebugInfo] = useState<any>({})
   const [showDebug, setShowDebug] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
-  const [mode, setMode] = useState<"quiz" | "buzzer">("quiz")
+  const [mode, setMode] = useState<"quiz" | "buzzer" | "question_corner">("quiz")
   const router = useRouter()
   const params = useParams<{ code: string }>()
   const code = params?.code
@@ -245,7 +245,9 @@ export default function JoinQuizPage() {
       const playUrl =
         mode === "buzzer"
           ? `/buzzer/${code}?participant=${responseData.data.id}`
-          : `/play/${code}?participant=${responseData.data.id}`
+          : mode === "question_corner"
+            ? `/question-corner/${code}?participant=${responseData.data.id}`
+            : `/play/${code}?participant=${responseData.data.id}`
       console.log("Redirecting to:", playUrl)
       router.push(playUrl)
     } catch (err) {
@@ -355,12 +357,16 @@ export default function JoinQuizPage() {
     content = (
       <div className="space-y-6">
         {/* モード選択タブ */}
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "quiz" | "buzzer")} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "quiz" | "buzzer" | "question_corner")} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="quiz">クイズモード</TabsTrigger>
             <TabsTrigger value="buzzer">
               <Bell className="h-4 w-4 mr-1" />
               早押しモード
+            </TabsTrigger>
+            <TabsTrigger value="question_corner">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              質問コーナー
             </TabsTrigger>
           </TabsList>
 
@@ -370,6 +376,10 @@ export default function JoinQuizPage() {
 
           <TabsContent value="buzzer" className="mt-4">
             <p className="text-sm text-muted-foreground mb-4">早押しボタンで競争します</p>
+          </TabsContent>
+
+          <TabsContent value="question_corner" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">管理者に質問を投稿できます</p>
           </TabsContent>
         </Tabs>
 
@@ -406,6 +416,11 @@ export default function JoinQuizPage() {
               <>
                 <Bell className="mr-2 h-4 w-4" />
                 早押しに参加
+              </>
+            ) : mode === "question_corner" ? (
+              <>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                質問コーナーを開く
               </>
             ) : (
               "クイズに参加"
