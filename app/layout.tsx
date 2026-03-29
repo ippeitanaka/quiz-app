@@ -1,18 +1,12 @@
 import type React from "react"
 import "@/app/globals.css"
-import { Noto_Serif_JP, Zen_Maru_Gothic } from "next/font/google"
+import { Zen_Maru_Gothic } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-
-const notoSerifJp = Noto_Serif_JP({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-title",
-})
 
 const zenMaruGothic = Zen_Maru_Gothic({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
-  variable: "--font-body",
+  variable: "--font-ui",
 })
 
 export const metadata = {
@@ -28,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${notoSerifJp.variable} ${zenMaruGothic.variable}`}>
+      <body className={zenMaruGothic.variable}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>

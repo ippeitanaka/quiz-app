@@ -44,10 +44,18 @@ export function ParticipantModeNav({ code, participantId }: Props) {
           const Icon = item.icon
 
           return (
-            <Button key={item.key} asChild variant={item.active ? "default" : "outline"} className="w-full">
+            <Button
+              key={item.key}
+              asChild
+              variant={item.active ? "default" : "outline"}
+              className="h-11 w-full px-1 text-[11px] sm:px-3 sm:text-sm"
+            >
               <Link href={item.href}>
-                <Icon className="mr-1 h-4 w-4" />
-                {item.label}
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">{item.label}</span>
+                <span className="sm:hidden">
+                  {item.key === "question" ? "質問" : item.label}
+                </span>
               </Link>
             </Button>
           )

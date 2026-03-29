@@ -20,7 +20,7 @@ import { AnalyticsDashboard } from "@/components/quiz/analytics-dashboard"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/hooks/use-toast"
-import { Trash2, Award, Eye, EyeOff, UserMinus, Loader2, Play, Pause, Pencil, Copy, Users } from "lucide-react"
+import { Trash2, Award, Eye, EyeOff, UserMinus, Loader2, Play, Pause, Pencil, Copy, Users, RefreshCw, Smartphone } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,6 +78,9 @@ export default function AdminQuizPage() {
   const [deletingQuestionPostId, setDeletingQuestionPostId] = useState<string | null>(null)
   const [bulkDeletingQuestionPosts, setBulkDeletingQuestionPosts] = useState(false)
   const [deletingAllParticipants, setDeletingAllParticipants] = useState(false)
+  const [nfcSupported, setNfcSupported] = useState(false)
+  const [writingNfc, setWritingNfc] = useState(false)
+  const [nfcMessage, setNfcMessage] = useState("")
   const params = useParams<{ id: string }>()
   const quizId = params?.id
 
@@ -91,6 +94,11 @@ export default function AdminQuizPage() {
       router.push("/admin/login")
     }
   }, [user, isLoading, router])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setNfcSupported(window.isSecureContext && "NDEFReader" in window)
+  }, [])
 
   // Load quiz data
   useEffect(() => {
@@ -331,32 +339,36 @@ export default function AdminQuizPage() {
     }
   }, [quiz, questions, participants, teams])
 
+  const fetchQuestionCornerPosts = async () => {
+    if (!quiz) return
+
+    try {
+      setQuestionCornerLoading(true)
+      const response = await fetch(`/api/quiz/question-corner?quizId=${quiz.id}`)
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "質問の取得に失敗しました")
+      }
+
+      setQuestionCornerPosts(data.data || [])
+    } catch (err) {
+      console.error("Error fetching question corner posts:", err)
+      toast({
+        title: "エラー",
+        description: err instanceof Error ? err.message : "質問の取得に失敗しました",
+        variant: "destructive",
+      })
+    } finally {
+      setQuestionCornerLoading(false)
+    }
+  }
+
   // Load question corner posts
   useEffect(() => {
     if (!quiz) return
 
-    const fetchQuestionCornerPosts = async () => {
-      try {
-        setQuestionCornerLoading(true)
-        const response = await fetch(`/api/quiz/question-corner?quizId=${quiz.id}`)
-        const data = await response.json()
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || "質問の取得に失敗しました")
-        }
-
-        setQuestionCornerPosts(data.data || [])
-      } catch (err) {
-        console.error("Error fetching question corner posts:", err)
-      } finally {
-        setQuestionCornerLoading(false)
-      }
-    }
-
     fetchQuestionCornerPosts()
-    const interval = setInterval(fetchQuestionCornerPosts, 5000)
-
-    return () => clearInterval(interval)
   }, [quiz])
 
   // Toggle quiz active state
@@ -1092,6 +1104,22 @@ export default function AdminQuizPage() {
       <div className="space-y-6">
         <QuizCard title="質問コーナー" description="参加者から届いた質問一覧" gradient="yellow">
           <div className="space-y-4">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={fetchQuestionCornerPosts} disabled={questionCornerLoading}>
+                {questionCornerLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    更新中...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    更新
+                  </>
+                )}
+              </Button>
+            </div>
+
             {questionCornerLoading ? (
               <div className="flex items-center justify-center py-8 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1199,6 +1227,50 @@ export default function AdminQuizPage() {
         </QuizCard>
       </div>
     )
+  }
+
+  const handleWriteNfcTag = async () => {
+    if (typeof window === "undefined") return
+
+    if (!window.isSecureContext || !("NDEFReader" in window)) {
+      setNfcMessage("この端末/ブラウザではWeb NFCが利用できません（主にAndroid版Chromeで対応）")
+      toast({
+        title: "NFC非対応",
+        description: "この端末/ブラウザではWeb NFCが利用できません",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setWritingNfc(true)
+      setNfcMessage("NFCタグを端末に近づけてください...")
+
+      const ndef = new (window as any).NDEFReader()
+      await ndef.write({
+        records: [{
+          recordType: "url",
+          data: joinUrl,
+        }],
+      })
+
+      setNfcMessage("NFCタグへの書き込みが完了しました")
+      toast({
+        title: "書き込み完了",
+        description: "NFCタグに参加リンクを書き込みました",
+      })
+    } catch (err) {
+      console.error("Error writing NFC tag:", err)
+      const message = err instanceof Error ? err.message : "NFCタグの書き込みに失敗しました"
+      setNfcMessage(`書き込み失敗: ${message}`)
+      toast({
+        title: "書き込み失敗",
+        description: message,
+        variant: "destructive",
+      })
+    } finally {
+      setWritingNfc(false)
+    }
   }
 
   if (isLoading || !user) {
@@ -1747,6 +1819,39 @@ export default function AdminQuizPage() {
               )}
             </QuizCard>
           </div>
+
+          <QuizCard title="NFCタグ発行" description="参加リンクをNFCタグに書き込めます" gradient="green">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                QRコードと同じ参加URLをNFCタグへ書き込みます。参加者はタグにスマホをかざすだけで参加できます。
+              </p>
+
+              <div className="rounded-md border bg-white/70 p-3 text-xs text-muted-foreground">
+                <p>対応環境: 主に Android + Chrome（HTTPS環境）</p>
+                <p>iPhoneではWeb NFC書き込みは未対応のため、専用アプリでの事前書き込みが必要です。</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <Button onClick={handleWriteNfcTag} disabled={writingNfc || !nfcSupported}>
+                  {writingNfc ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      書き込み中...
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="h-4 w-4 mr-2" />
+                      NFCタグに書き込む
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-xs text-muted-foreground break-all">URL: {joinUrl}</p>
+              </div>
+
+              {nfcMessage && <p className="text-sm">{nfcMessage}</p>}
+            </div>
+          </QuizCard>
         </TabsContent>
       </Tabs>
     </div>

@@ -48,7 +48,7 @@
 }
 
 body {
-  font-family: var(--font-body), "Hiragino Maru Gothic ProN", sans-serif;
+  font-family: var(--font-ui), "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
   background:
     radial-gradient(circle at 15% 20%, rgba(143, 202, 173, 0.32), transparent 33%),
     radial-gradient(circle at 82% 15%, rgba(255, 226, 156, 0.3), transparent 40%),
@@ -64,7 +64,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-title), "Yu Mincho", serif;
+  font-family: inherit;
   letter-spacing: 0.01em;
 }
 

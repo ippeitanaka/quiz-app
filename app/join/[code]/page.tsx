@@ -358,15 +358,20 @@ export default function JoinQuizPage() {
       <div className="space-y-6">
         {/* モード選択タブ */}
         <Tabs value={mode} onValueChange={(v) => setMode(v as "quiz" | "buzzer" | "question_corner")} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="quiz">クイズモード</TabsTrigger>
-            <TabsTrigger value="buzzer">
-              <Bell className="h-4 w-4 mr-1" />
-              早押しモード
+          <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1">
+            <TabsTrigger value="quiz" className="px-1 py-2 text-[11px] sm:px-3 sm:text-sm">
+              <span className="sm:hidden">クイズ</span>
+              <span className="hidden sm:inline">クイズモード</span>
             </TabsTrigger>
-            <TabsTrigger value="question_corner">
-              <MessageSquare className="h-4 w-4 mr-1" />
-              質問コーナー
+            <TabsTrigger value="buzzer" className="px-1 py-2 text-[11px] sm:px-3 sm:text-sm">
+              <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">早押し</span>
+              <span className="hidden sm:inline">早押しモード</span>
+            </TabsTrigger>
+            <TabsTrigger value="question_corner" className="px-1 py-2 text-[11px] sm:px-3 sm:text-sm">
+              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">質問</span>
+              <span className="hidden sm:inline">質問コーナー</span>
             </TabsTrigger>
           </TabsList>
 
