@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase-client"
 import { QuestionEditor } from "@/components/quiz/question-editor"
-import { ThemeSelector } from "@/components/quiz/theme-selector"
 import { TeamManagement } from "@/components/quiz/team-management"
 import { toast } from "@/hooks/use-toast"
 
@@ -126,41 +125,6 @@ export default function EditQuizPage() {
     }
   }
 
-  const handleThemeSave = async (theme) => {
-    try {
-      const { error } = await supabase
-        .from("quizzes")
-        .update({
-          theme_color: theme.color,
-          logo_url: theme.logo || "",
-          background_url: theme.background || "",
-          updated_at: new Date(),
-        })
-        .eq("id", quizId)
-
-      if (error) throw error
-
-      setQuiz((prev) => ({
-        ...prev,
-        theme_color: theme.color,
-        logo_url: theme.logo || "",
-        background_url: theme.background || "",
-      }))
-
-      toast({
-        title: "テーマ保存完了",
-        description: "クイズのテーマが正常に保存されました",
-      })
-    } catch (error) {
-      console.error("Error saving theme:", error)
-      toast({
-        title: "エラー",
-        description: "テーマの保存に失敗しました",
-        variant: "destructive",
-      })
-    }
-  }
-
   const handleTeamSave = async (updatedTeams) => {
     try {
       // チームを更新
@@ -254,7 +218,6 @@ export default function EditQuizPage() {
             <TabsList className="mb-4">
               <TabsTrigger value="basic">基本設定</TabsTrigger>
               <TabsTrigger value="questions">問題管理</TabsTrigger>
-              <TabsTrigger value="theme">テーマ設定</TabsTrigger>
               <TabsTrigger value="teams">チーム設定</TabsTrigger>
             </TabsList>
 
@@ -288,15 +251,6 @@ export default function EditQuizPage() {
 
             <TabsContent value="questions">
               <QuestionEditor quizId={quizId} initialQuestions={questions} />
-            </TabsContent>
-
-            <TabsContent value="theme">
-              <ThemeSelector
-                initialTheme={quiz.theme_color}
-                initialLogo={quiz.logo_url}
-                initialBackground={quiz.background_url}
-                onSave={handleThemeSave}
-              />
             </TabsContent>
 
             <TabsContent value="teams">

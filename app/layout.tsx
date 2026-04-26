@@ -1,13 +1,6 @@
 import type React from "react"
 import "@/app/globals.css"
-import { Zen_Maru_Gothic } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-
-const zenMaruGothic = Zen_Maru_Gothic({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-ui",
-})
 
 export const metadata = {
   title: "Quiz App",
@@ -22,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={zenMaruGothic.variable}>
+      <body>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>

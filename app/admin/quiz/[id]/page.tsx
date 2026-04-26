@@ -14,13 +14,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import type { Quiz, Question, Participant } from "@/lib/supabase/schema"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth/auth-context"
-import { ThemeSelector } from "@/components/quiz/theme-selector"
 import { TeamManagement } from "@/components/quiz/team-management"
 import { AnalyticsDashboard } from "@/components/quiz/analytics-dashboard"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/hooks/use-toast"
-import { Trash2, Award, Eye, EyeOff, UserMinus, Loader2, Play, Pause, Pencil, Copy, Users, RefreshCw, Smartphone } from "lucide-react"
+import { Trash2, Award, Eye, EyeOff, UserMinus, Loader2, Play, Pause, Pencil, Copy, Users, RefreshCw, RotateCcw, Smartphone } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,6 +77,7 @@ export default function AdminQuizPage() {
   const [deletingQuestionPostId, setDeletingQuestionPostId] = useState<string | null>(null)
   const [bulkDeletingQuestionPosts, setBulkDeletingQuestionPosts] = useState(false)
   const [deletingAllParticipants, setDeletingAllParticipants] = useState(false)
+  const [resettingAll, setResettingAll] = useState(false)
   const [nfcSupported, setNfcSupported] = useState(false)
   const [writingNfc, setWritingNfc] = useState(false)
   const [nfcMessage, setNfcMessage] = useState("")
@@ -398,33 +398,6 @@ export default function AdminQuizPage() {
     }
   }
 
-  // Handle theme save
-  const handleThemeSave = async (theme: any) => {
-    if (!quiz) return
-
-    try {
-      const { error } = await supabase
-        .from("quizzes")
-        .update({
-          theme_color: theme.color,
-          logo_url: theme.logo || "",
-          background_url: theme.background || "",
-        })
-        .eq("id", quiz.id)
-
-      if (error) throw error
-
-      setQuiz({
-        ...quiz,
-        theme_color: theme.color,
-        logo_url: theme.logo || "",
-        background_url: theme.background || "",
-      })
-    } catch (err) {
-      console.error("Error saving theme:", err)
-    }
-  }
-
   // Handle team save
   const handleTeamSave = async (updatedTeams: any) => {
     if (!quiz) return
@@ -735,6 +708,43 @@ export default function AdminQuizPage() {
         description: "正解発表に失敗しました",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleAllReset = async () => {
+    if (!quiz) return
+
+    try {
+      setResettingAll(true)
+
+      const response = await fetch(`/api/quiz/${quiz.id}/reset-all`, {
+        method: "POST",
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "オールリセットに失敗しました")
+      }
+
+      setParticipants((prev) => prev.map((participant) => ({ ...participant, score: 0 })))
+      setHiddenQuestions(questions.map((question) => question.id))
+      setResultsRevealed({})
+      setQuestionCornerPosts([])
+      setSelectedQuestionPostIds([])
+
+      toast({
+        title: "オールリセット完了",
+        description: "回答・得点・表示状態を初期化しました",
+      })
+    } catch (err) {
+      console.error("Error resetting quiz state:", err)
+      toast({
+        title: "エラー",
+        description: err instanceof Error ? err.message : "オールリセットに失敗しました",
+        variant: "destructive",
+      })
+    } finally {
+      setResettingAll(false)
     }
   }
 
@@ -1367,6 +1377,27 @@ export default function AdminQuizPage() {
             </AlertDialogContent>
           </AlertDialog>
 
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={resettingAll}>
+                <RotateCcw className="h-4 w-4 mr-1" />
+                {resettingAll ? "リセット中..." : "オールリセット"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>クイズ全体をリセットしますか？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  参加者は残したまま、回答履歴・得点・表示中の問題・結果発表状態・質問コーナー投稿を初期化します。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                <AlertDialogAction onClick={handleAllReset}>リセットする</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <div className="flex items-center space-x-2">
             <Label htmlFor="active" className={quiz.is_active ? "text-green-600" : "text-muted-foreground"}>
               {quiz.is_active ? "アクティブ" : "非アクティブ"}
@@ -1410,7 +1441,6 @@ export default function AdminQuizPage() {
           <TabsTrigger value="questions">問題</TabsTrigger>
           <TabsTrigger value="participants">参加者 ({participants.length})</TabsTrigger>
           <TabsTrigger value="question-corner">質問コーナー ({questionCornerPosts.length})</TabsTrigger>
-          <TabsTrigger value="theme">テーマ設定</TabsTrigger>
           <TabsTrigger value="teams">チーム設定</TabsTrigger>
           <TabsTrigger value="analytics">分析</TabsTrigger>
           <TabsTrigger value="share">共有</TabsTrigger>
@@ -1722,15 +1752,6 @@ export default function AdminQuizPage() {
         <TabsContent value="participants">{renderParticipantsTab()}</TabsContent>
 
         <TabsContent value="question-corner">{renderQuestionCornerTab()}</TabsContent>
-
-        <TabsContent value="theme">
-          <ThemeSelector
-            initialTheme={quiz.theme_color || "pastel-blue"}
-            initialLogo={quiz.logo_url || ""}
-            initialBackground={quiz.background_url || ""}
-            onSave={handleThemeSave}
-          />
-        </TabsContent>
 
         <TabsContent value="teams">
           <TeamManagement
