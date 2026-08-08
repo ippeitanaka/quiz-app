@@ -1,17 +1,43 @@
+export type ScoreboardRecord = {
+  id: string
+  admin_id: string
+  title: string
+  description: string | null
+  mode: "individual" | "group"
+  is_public: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ScoreboardEntryRecord = {
+  id: string
+  scoreboard_id: string
+  name: string
+  entry_type: "individual" | "group"
+  score: number
+  color_index: number
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type ScoreboardEventType = "manual" | "quick_add" | "quick_subtract" | "challenge" | "reset"
+
 export type ScoreboardPlayer = {
   id: string
   name: string
   score: number
   colorIndex: number
+  sortOrder: number
 }
 
 export type ScoreboardState = {
+  id: string | null
   title: string
   players: ScoreboardPlayer[]
   updatedAt: number
 }
-
-export const SCOREBOARD_STORAGE_KEY = "tmc-quiz-scoreboard-v1"
 
 export const SCOREBOARD_COLORS = [
   { background: "#e5f0e8", border: "#6fa085", accent: "#1f5a46", text: "#173f32" },
@@ -29,60 +55,31 @@ export const SCOREBOARD_COLORS = [
 ] as const
 
 export const DEFAULT_SCOREBOARD_STATE: ScoreboardState = {
+  id: null,
   title: "スコアボード",
   players: [],
   updatedAt: 0,
 }
 
-function createId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID()
-  }
-  return `score-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
-
-export function createScoreboardPlayer(name: string, colorIndex: number): ScoreboardPlayer {
+export function entryToPlayer(entry: ScoreboardEntryRecord): ScoreboardPlayer {
   return {
-    id: createId(),
-    name,
-    score: 0,
-    colorIndex: colorIndex % SCOREBOARD_COLORS.length,
+    id: entry.id,
+    name: entry.name,
+    score: Number(entry.score) || 0,
+    colorIndex: Number(entry.color_index) || 0,
+    sortOrder: Number(entry.sort_order) || 0,
   }
 }
 
-export function loadScoreboardState(): ScoreboardState {
-  if (typeof window === "undefined") return DEFAULT_SCOREBOARD_STATE
-
-  try {
-    const raw = window.localStorage.getItem(SCOREBOARD_STORAGE_KEY)
-    if (!raw) return DEFAULT_SCOREBOARD_STATE
-
-    const parsed = JSON.parse(raw) as Partial<ScoreboardState>
-    const players = Array.isArray(parsed.players)
-      ? parsed.players
-          .filter((player): player is ScoreboardPlayer => Boolean(player && typeof player.id === "string"))
-          .map((player, index) => ({
-            id: player.id,
-            name: typeof player.name === "string" && player.name.trim() ? player.name : `参加者 ${index + 1}`,
-            score: Number.isFinite(Number(player.score)) ? Number(player.score) : 0,
-            colorIndex: Number.isInteger(player.colorIndex) ? player.colorIndex % SCOREBOARD_COLORS.length : index % SCOREBOARD_COLORS.length,
-          }))
-      : []
-
-    return {
-      title: typeof parsed.title === "string" && parsed.title.trim() ? parsed.title : "スコアボード",
-      players,
-      updatedAt: Number(parsed.updatedAt) || 0,
-    }
-  } catch (error) {
-    console.error("Failed to load scoreboard:", error)
-    return DEFAULT_SCOREBOARD_STATE
+export function scoreboardToState(board: ScoreboardRecord, entries: ScoreboardEntryRecord[]): ScoreboardState {
+  return {
+    id: board.id,
+    title: board.title || "スコアボード",
+    players: [...entries]
+      .sort((a, b) => a.sort_order - b.sort_order || a.created_at.localeCompare(b.created_at))
+      .map(entryToPlayer),
+    updatedAt: Date.parse(board.updated_at) || Date.now(),
   }
-}
-
-export function saveScoreboardState(state: ScoreboardState) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(SCOREBOARD_STORAGE_KEY, JSON.stringify(state))
 }
 
 export function drawChallengePoints() {
