@@ -101,7 +101,6 @@ export default function ScoreboardDisplayPage() {
         }
       })
 
-    // ネットワーク復帰時やRealtime切断時にも自動で追いつく。
     const fallback = window.setInterval(sync, 10000)
 
     return () => {
@@ -137,8 +136,8 @@ export default function ScoreboardDisplayPage() {
   if (error) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#173f32] px-6 text-white">
-        <div className="max-w-xl rounded-[2rem] border border-white/10 bg-white/10 p-8 text-center shadow-2xl">
-          <CloudOff className="mx-auto h-12 w-12 text-[#f2d17d]" />
+        <div className="max-w-xl rounded-[2rem] border border-[#f0cf77]/20 bg-white/10 p-8 text-center shadow-2xl">
+          <CloudOff className="mx-auto h-12 w-12 text-[#f0cf77]" />
           <h1 className="mt-5 text-2xl font-black">スコアボードを表示できません</h1>
           <p className="mt-3 text-sm font-bold leading-6 text-white/65">{error}</p>
         </div>
@@ -147,14 +146,16 @@ export default function ScoreboardDisplayPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_15%,rgba(90,151,116,0.30),transparent_32%),radial-gradient(circle_at_82%_8%,rgba(240,207,119,0.22),transparent_34%),linear-gradient(145deg,#102c23_0%,#173f32_46%,#245845_100%)] px-4 py-5 text-white sm:px-7 sm:py-7 lg:px-10">
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_14%_13%,rgba(93,150,119,0.35),transparent_31%),radial-gradient(circle_at_84%_7%,rgba(240,207,119,0.28),transparent_33%),linear-gradient(145deg,#102c23_0%,#173f32_46%,#245845_100%)] px-4 py-5 text-white sm:px-7 sm:py-7 lg:px-10">
       <div className="mx-auto max-w-[1700px]">
-        <header className="mb-7 flex items-center justify-between gap-5 border-b border-white/10 pb-5">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 p-1.5 shadow-xl"><img src="/icon.png" alt="Quiz App" className="h-full w-full object-contain drop-shadow-lg" /></div>
+        <header className="mb-7 flex items-center justify-between gap-5 border-b border-[#f0cf77]/15 pb-5">
+          <div className="flex min-w-0 items-center gap-5">
+            <div className="brand-logo-frame brand-logo-frame--compact">
+              <img src="/icon.png" alt="Quiz App" />
+            </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-[11px] font-black tracking-[0.24em] text-[#f2d17d]">LIVE SCOREBOARD</p>
+                <p className="text-[11px] font-black tracking-[0.24em] text-[#f0cf77]">LIVE SCOREBOARD</p>
                 <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black tracking-wider ${realtimeStatus === "connected" ? "border-emerald-200/20 bg-emerald-300/10 text-emerald-100" : "border-amber-200/20 bg-amber-300/10 text-amber-100"}`}>
                   {realtimeStatus === "connected" ? <Cloud className="h-3 w-3" /> : <CloudOff className="h-3 w-3" />}
                   {realtimeStatus === "connected" ? "LIVE" : "RECONNECTING"}
@@ -163,15 +164,15 @@ export default function ScoreboardDisplayPage() {
               <h1 className="mt-1 truncate text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">{board.title}</h1>
             </div>
           </div>
-          <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 md:flex">
-            <Trophy className="h-5 w-5 text-[#f2d17d]" />
+          <div className="hidden items-center gap-3 rounded-2xl border border-[#f0cf77]/15 bg-white/10 px-5 py-3 md:flex">
+            <Trophy className="h-5 w-5 text-[#f0cf77]" />
             <div><p className="text-[10px] font-bold tracking-wider text-white/45">ENTRIES</p><p className="text-xl font-black">{board.players.length}</p></div>
           </div>
         </header>
 
         {ranked.length === 0 ? (
-          <div className="flex min-h-[65vh] items-center justify-center rounded-[2rem] border border-dashed border-white/20 bg-white/5 text-center">
-            <div><Trophy className="mx-auto h-14 w-14 text-[#f2d17d]" /><p className="mt-5 text-2xl font-black">参加者を追加してください</p><p className="mt-2 text-sm font-bold text-white/50">運営用スコアボードで追加すると、この端末にも自動で反映されます。</p></div>
+          <div className="flex min-h-[65vh] items-center justify-center rounded-[2rem] border border-dashed border-[#f0cf77]/25 bg-white/5 text-center">
+            <div><Trophy className="mx-auto h-14 w-14 text-[#f0cf77]" /><p className="mt-5 text-2xl font-black">参加者を追加してください</p><p className="mt-2 text-sm font-bold text-white/50">運営用スコアボードで追加すると、この端末にも自動で反映されます。</p></div>
           </div>
         ) : (
           <section className={`grid gap-4 sm:gap-5 ${ranked.length <= 4 ? "md:grid-cols-2" : ranked.length <= 9 ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-3 xl:grid-cols-4"}`}>

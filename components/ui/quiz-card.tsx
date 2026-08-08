@@ -18,20 +18,22 @@ export function QuizCard({
   children,
   ...props
 }: QuizCardProps) {
+  // Keep the legacy variant names for compatibility, but express every card
+  // with the logo palette so the app reads as one visual system.
   const gradientClasses = {
-    pink: "from-[#f2e2d7] via-[#fffaf0] to-[#f7f4e7]",
-    blue: "from-[#e2edf3] via-[#f7fbf8] to-[#f7f3e6]",
-    green: "from-[#e3eee2] via-[#f7faf2] to-[#f8f1df]",
-    yellow: "from-[#f5e8c8] via-[#fff9e9] to-[#edf3e5]",
-    purple: "from-[#e9e4f0] via-[#fbf8f3] to-[#e8f0e8]",
+    pink: "from-[#f7edcf] via-[#fffdf5] to-[#edf3e8]",
+    blue: "from-[#e4efe8] via-[#fffdf5] to-[#f7edcf]",
+    green: "from-[#dcebe1] via-[#fffdf5] to-[#f5e7bd]",
+    yellow: "from-[#f5e3af] via-[#fffdf5] to-[#e7f0e9]",
+    purple: "from-[#e8efe5] via-[#fffdf5] to-[#f2dfaa]",
   }
 
   const railClasses = {
-    pink: "from-[#a86455] via-[#d49b74] to-[#f0cf77]",
-    blue: "from-[#315f7d] via-[#6f9cb8] to-[#85ad95]",
-    green: "from-[#1f5a46] via-[#5d9677] to-[#f0cf77]",
-    yellow: "from-[#8a6b24] via-[#d1a850] to-[#5d9677]",
-    purple: "from-[#6a558c] via-[#9d89bc] to-[#5d9677]",
+    pink: "from-[#1f5a46] via-[#5d9677] to-[#f0cf77]",
+    blue: "from-[#173f32] via-[#5d9677] to-[#f0cf77]",
+    green: "from-[#1f5a46] via-[#73a58a] to-[#f0cf77]",
+    yellow: "from-[#c99b37] via-[#f0cf77] to-[#5d9677]",
+    purple: "from-[#173f32] via-[#1f5a46] to-[#f0cf77]",
   }
 
   return (
