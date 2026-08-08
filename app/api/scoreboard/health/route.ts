@@ -5,13 +5,28 @@ const TABLES = ["scoreboards", "scoreboard_entries", "scoreboard_events"] as con
 
 export const dynamic = "force-dynamic"
 
+function getProjectRef() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!url) return null
+
+  try {
+    return new URL(url).hostname.split(".")[0] || null
+  } catch {
+    return null
+  }
+}
+
 export async function GET() {
   const checks = await Promise.all(
     TABLES.map(async (table) => {
-      const { error } = await supabase.from(table).select("id").limit(1)
+      const { count, error } = await supabase
+        .from(table)
+        .select("id", { count: "exact", head: true })
+
       return {
         table,
         ok: !error,
+        visibleRows: count ?? null,
         code: error?.code ?? null,
         message: error?.message ?? null,
       }
@@ -26,6 +41,7 @@ export async function GET() {
       supabaseConfigured: Boolean(
         process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       ),
+      projectRef: getProjectRef(),
       checks,
       checkedAt: new Date().toISOString(),
     },
