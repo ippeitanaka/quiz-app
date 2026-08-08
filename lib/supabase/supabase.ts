@@ -69,8 +69,11 @@ function loadBrowserCredentials() {
 
 function resolvePublicCredentials() {
   const browserCredentials = loadBrowserCredentials()
-  const resolvedUrl = browserCredentials.url || supabaseUrl
-  const resolvedKey = browserCredentials.key || supabaseAnonKey
+  // Prefer deployment-wide environment variables so every device connected to the
+  // same app URL resolves the same Supabase project. Browser-local overrides are
+  // kept only as a fallback for local/dev setups without env vars.
+  const resolvedUrl = supabaseUrl || browserCredentials.url
+  const resolvedKey = supabaseAnonKey || browserCredentials.key
 
   if (!resolvedUrl || !resolvedKey) {
     return { error: "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY" }
