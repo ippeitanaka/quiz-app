@@ -25,59 +25,79 @@
 }
 
 :root {
-  --background: 46 49% 95%;
-  --foreground: 155 28% 17%;
-  --card: 44 56% 97%;
-  --card-foreground: 155 28% 17%;
-  --popover: 44 56% 97%;
-  --popover-foreground: 155 28% 17%;
-  --primary: 165 39% 31%;
-  --primary-foreground: 42 67% 96%;
-  --secondary: 187 34% 89%;
-  --secondary-foreground: 165 39% 22%;
-  --muted: 88 33% 91%;
-  --muted-foreground: 165 17% 35%;
-  --accent: 39 72% 74%;
-  --accent-foreground: 165 39% 22%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 149 20% 76%;
-  --input: 149 20% 76%;
-  --ring: 165 39% 31%;
+  --background: 44 48% 95%;
+  --foreground: 157 38% 16%;
+  --card: 45 55% 98%;
+  --card-foreground: 157 38% 16%;
+  --popover: 45 55% 99%;
+  --popover-foreground: 157 38% 16%;
+  --primary: 158 49% 24%;
+  --primary-foreground: 44 70% 96%;
+  --secondary: 151 25% 90%;
+  --secondary-foreground: 158 43% 22%;
+  --muted: 85 28% 92%;
+  --muted-foreground: 157 16% 38%;
+  --accent: 43 72% 72%;
+  --accent-foreground: 158 43% 22%;
+  --destructive: 5 69% 49%;
+  --destructive-foreground: 45 60% 98%;
+  --border: 151 18% 78%;
+  --input: 151 18% 78%;
+  --ring: 158 49% 24%;
   --radius: 1rem;
 }
 
 .dark {
-  --background: 170 27% 11%;
+  --background: 163 34% 9%;
   --foreground: 45 42% 94%;
-  --card: 168 26% 14%;
+  --card: 160 31% 12%;
   --card-foreground: 45 42% 94%;
-  --popover: 168 26% 14%;
+  --popover: 160 31% 12%;
   --popover-foreground: 45 42% 94%;
   --primary: 43 66% 63%;
-  --primary-foreground: 170 27% 11%;
-  --secondary: 171 18% 24%;
+  --primary-foreground: 163 34% 10%;
+  --secondary: 160 20% 21%;
   --secondary-foreground: 45 42% 94%;
-  --muted: 171 18% 22%;
-  --muted-foreground: 45 23% 72%;
-  --accent: 180 24% 39%;
+  --muted: 160 18% 20%;
+  --muted-foreground: 45 22% 72%;
+  --accent: 158 26% 39%;
   --accent-foreground: 45 42% 94%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 168 18% 28%;
-  --input: 168 18% 28%;
+  --destructive: 5 58% 37%;
+  --destructive-foreground: 45 60% 98%;
+  --border: 159 17% 27%;
+  --input: 159 17% 27%;
   --ring: 43 66% 63%;
+}
+
+html {
+  min-height: 100%;
+  background: #e7efdf;
 }
 
 body {
   font-family: "Quiz UDBiz Gothic", "BIZ UDPGothic", "BIZ UDGothic", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
   background:
-    radial-gradient(circle at 15% 20%, rgba(143, 202, 173, 0.32), transparent 33%),
-    radial-gradient(circle at 82% 15%, rgba(255, 226, 156, 0.3), transparent 40%),
-    radial-gradient(circle at 48% 86%, rgba(166, 205, 234, 0.25), transparent 38%),
-    linear-gradient(180deg, #f7f1de 0%, #e7f0dd 43%, #dfead5 100%);
+    radial-gradient(circle at 9% 13%, rgba(100, 165, 127, 0.25), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(241, 207, 119, 0.24), transparent 31%),
+    radial-gradient(circle at 54% 92%, rgba(126, 167, 193, 0.16), transparent 34%),
+    linear-gradient(180deg, #f8f3e3 0%, #edf2e3 46%, #e0ead8 100%);
   background-attachment: fixed;
   min-height: 100vh;
+  color: #193c31;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(31, 90, 70, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 90, 70, 0.035) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 78%);
 }
 
 button,
@@ -94,7 +114,12 @@ h4,
 h5,
 h6 {
   font-family: inherit;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
+}
+
+::selection {
+  background: rgba(31, 90, 70, 0.2);
+  color: #173f32;
 }
 
 @layer base {
@@ -106,12 +131,95 @@ h6 {
   }
 }
 
+@layer components {
+  .brand-page {
+    @apply min-h-screen px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-7;
+  }
+
+  .brand-shell {
+    @apply mx-auto overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffdf5]/90 backdrop-blur-xl;
+    box-shadow: 0 26px 85px rgba(30, 68, 48, 0.15), inset 0 1px rgba(255, 255, 255, 0.7);
+  }
+
+  .brand-header {
+    @apply px-5 py-5 text-white sm:px-7 lg:px-9;
+    background:
+      radial-gradient(circle at 92% 0%, rgba(242, 209, 125, 0.16), transparent 28%),
+      linear-gradient(120deg, #14392d 0%, #1f513f 52%, #2f6e56 100%);
+    box-shadow: inset 0 -1px rgba(255, 255, 255, 0.08);
+  }
+
+  .brand-content {
+    @apply p-5 sm:p-7 lg:p-9;
+  }
+
+  .brand-logo-frame {
+    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-1.5 sm:h-16 sm:w-16;
+    box-shadow: 0 12px 28px rgba(6, 27, 19, 0.3), inset 0 1px rgba(255, 255, 255, 0.16);
+  }
+
+  .brand-logo-frame img {
+    @apply h-full w-full object-contain drop-shadow-lg;
+  }
+
+  .brand-kicker {
+    @apply text-[10px] font-black tracking-[0.22em] text-[#f2d17d] sm:text-[11px];
+  }
+
+  .brand-label {
+    @apply text-[11px] font-black tracking-[0.14em] text-[#718078];
+  }
+
+  .brand-panel {
+    @apply rounded-3xl border border-emerald-950/10 bg-white/75 backdrop-blur;
+    box-shadow: 0 12px 30px rgba(45, 79, 59, 0.075), inset 0 1px rgba(255, 255, 255, 0.7);
+  }
+
+  .brand-action-card {
+    @apply flex min-h-[132px] items-center justify-between gap-5 rounded-3xl border border-emerald-950/10 p-5 transition duration-200;
+    box-shadow: 0 12px 30px rgba(45, 79, 59, 0.075), inset 0 1px rgba(255, 255, 255, 0.65);
+  }
+
+  .brand-action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 38px rgba(45, 79, 59, 0.13), inset 0 1px rgba(255, 255, 255, 0.75);
+  }
+
+  .brand-action-icon {
+    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white transition duration-200;
+    box-shadow: 0 10px 22px rgba(31, 90, 70, 0.2), inset 0 1px rgba(255, 255, 255, 0.18);
+  }
+
+  .brand-action-card:hover .brand-action-icon {
+    transform: scale(1.06) rotate(-2deg);
+  }
+
+  .brand-quiz-card {
+    @apply overflow-hidden rounded-3xl border border-emerald-950/10 bg-white/82 transition duration-200;
+    box-shadow: 0 12px 32px rgba(45, 79, 59, 0.08), inset 0 1px rgba(255, 255, 255, 0.7);
+  }
+
+  .brand-quiz-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 42px rgba(45, 79, 59, 0.14), inset 0 1px rgba(255, 255, 255, 0.75);
+  }
+
+  .brand-header-button {
+    @apply h-11 rounded-xl border-white/20 bg-white/10 font-bold text-white hover:bg-white/20 hover:text-white;
+  }
+
+  .brand-loading {
+    @apply flex items-center gap-3 rounded-full border border-emerald-900/10 bg-white/80 px-5 py-3 text-sm font-bold text-emerald-950 backdrop-blur;
+    box-shadow: 0 10px 30px rgba(30, 68, 48, 0.1);
+  }
+}
+
 .cute-shadow {
-  box-shadow: 0 10px 24px rgba(43, 74, 56, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.34) inset;
+  box-shadow: 0 12px 30px rgba(43, 74, 56, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.34) inset;
 }
 
 .cute-card {
   @apply rounded-3xl p-6 cute-shadow;
-  background: linear-gradient(180deg, rgba(255, 255, 250, 0.93), rgba(247, 242, 225, 0.92));
-  backdrop-filter: blur(10px);
+  background: linear-gradient(180deg, rgba(255, 255, 250, 0.95), rgba(247, 242, 225, 0.92));
+  backdrop-filter: blur(12px);
 }
