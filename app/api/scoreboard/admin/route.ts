@@ -87,6 +87,15 @@ async function assertBoardOwner(scoreboardId: string, adminId: string) {
   }
 }
 
+async function touchBoard(scoreboardId: string) {
+  const { error } = await adminSupabase
+    .from("scoreboards")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", scoreboardId)
+
+  if (error) throw error
+}
+
 async function insertScoreEvent(input: {
   scoreboardId: string
   entryId: string | null
@@ -165,7 +174,7 @@ export async function POST(request: NextRequest) {
       case "saveTitle": {
         const { error } = await adminSupabase
           .from("scoreboards")
-          .update({ title: body.title })
+          .update({ title: body.title, updated_at: new Date().toISOString() })
           .eq("id", body.scoreboardId)
 
         if (error) throw error
@@ -175,7 +184,7 @@ export async function POST(request: NextRequest) {
       case "setMode": {
         const { error } = await adminSupabase
           .from("scoreboards")
-          .update({ mode: body.mode })
+          .update({ mode: body.mode, updated_at: new Date().toISOString() })
           .eq("id", body.scoreboardId)
 
         if (error) throw error
@@ -193,6 +202,7 @@ export async function POST(request: NextRequest) {
         })
 
         if (error) throw error
+        await touchBoard(body.scoreboardId)
         return NextResponse.json(await fetchBoard(body.scoreboardId))
       }
 
@@ -204,6 +214,7 @@ export async function POST(request: NextRequest) {
           .eq("scoreboard_id", body.scoreboardId)
 
         if (error) throw error
+        await touchBoard(body.scoreboardId)
         return NextResponse.json(await fetchBoard(body.scoreboardId))
       }
 
@@ -216,6 +227,7 @@ export async function POST(request: NextRequest) {
           .eq("scoreboard_id", body.scoreboardId)
 
         if (error) throw error
+  await touchBoard(body.scoreboardId)
 
         await insertScoreEvent({
           scoreboardId: body.scoreboardId,
@@ -237,6 +249,7 @@ export async function POST(request: NextRequest) {
           .eq("scoreboard_id", body.scoreboardId)
 
         if (error) throw error
+        await touchBoard(body.scoreboardId)
         return NextResponse.json(await fetchBoard(body.scoreboardId))
       }
 
@@ -247,6 +260,7 @@ export async function POST(request: NextRequest) {
           .eq("scoreboard_id", body.scoreboardId)
 
         if (error) throw error
+  await touchBoard(body.scoreboardId)
 
         const events = body.entries
           .filter((entry) => Number(entry.score) !== 0)

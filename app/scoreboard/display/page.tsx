@@ -214,7 +214,7 @@ export default function ScoreboardDisplayPage() {
     // after temporary Wi-Fi/background-tab interruptions.
     const fallback = window.setInterval(() => {
       loadBoard(scoreboardId).catch((err) => console.error("Live scoreboard reconciliation failed:", err))
-    }, 30000)
+    }, 5000)
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
