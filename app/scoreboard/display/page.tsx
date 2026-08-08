@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/supabase"
 import {
   DEFAULT_SCOREBOARD_STATE,
   SCOREBOARD_COLORS,
+  entryToPlayer,
   scoreboardToState,
   type ScoreboardEntryRecord,
   type ScoreboardRecord,
@@ -13,6 +14,10 @@ import {
 } from "@/lib/scoreboard"
 
 type RealtimeStatus = "connecting" | "connected" | "disconnected"
+
+function sortPlayers(players: ScoreboardState["players"]) {
+  return [...players].sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id))
+}
 
 export default function ScoreboardDisplayPage() {
   const [scoreboardId, setScoreboardId] = useState("")
@@ -56,11 +61,46 @@ export default function ScoreboardDisplayPage() {
     setError("")
   }, [])
 
+  const applyBoardUpdate = useCallback((record: ScoreboardRecord) => {
+    setBoard((current) => ({
+      ...current,
+      id: record.id,
+      title: record.title || "スコアボード",
+      updatedAt: Date.parse(record.updated_at) || Date.now(),
+    }))
+  }, [])
+
+  const applyEntryUpsert = useCallback((record: ScoreboardEntryRecord) => {
+    const nextPlayer = entryToPlayer(record)
+    setBoard((current) => {
+      const exists = current.players.some((player) => player.id === nextPlayer.id)
+      const players = exists
+        ? current.players.map((player) => (player.id === nextPlayer.id ? nextPlayer : player))
+        : [...current.players, nextPlayer]
+
+      return {
+        ...current,
+        players: sortPlayers(players),
+        updatedAt: Date.now(),
+      }
+    })
+  }, [])
+
+  const applyEntryDelete = useCallback((id: string) => {
+    if (!id) return
+    setBoard((current) => ({
+      ...current,
+      players: current.players.filter((player) => player.id !== id),
+      updatedAt: Date.now(),
+    }))
+  }, [])
+
   useEffect(() => {
     if (!scoreboardId) return
 
     let cancelled = false
     setLoading(true)
+    setRealtimeStatus("connecting")
 
     loadBoard(scoreboardId)
       .catch((err) => {
@@ -70,45 +110,76 @@ export default function ScoreboardDisplayPage() {
         if (!cancelled) setLoading(false)
       })
 
-    setRealtimeStatus("connecting")
-
-    const sync = () => {
-      loadBoard(scoreboardId).catch((err) => console.error("Live scoreboard refresh failed:", err))
-    }
-
     const channel = supabase
       .channel(`scoreboard-display-${scoreboardId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "scoreboards", filter: `id=eq.${scoreboardId}` },
-        sync,
+        (payload) => {
+          const next = payload.new as ScoreboardRecord
+          if (next?.id === scoreboardId) applyBoardUpdate(next)
+        },
       )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "scoreboard_entries", filter: `scoreboard_id=eq.${scoreboardId}` },
-        sync,
+        (payload) => {
+          const next = payload.new as ScoreboardEntryRecord
+          if (next?.scoreboard_id === scoreboardId) applyEntryUpsert(next)
+        },
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "scoreboard_entries", filter: `scoreboard_id=eq.${scoreboardId}` },
-        sync,
+        (payload) => {
+          const next = payload.new as ScoreboardEntryRecord
+          if (next?.scoreboard_id === scoreboardId) applyEntryUpsert(next)
+        },
       )
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "scoreboard_entries" }, sync)
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "scoreboard_entries" },
+        (payload) => {
+          const previous = payload.old as { id?: string }
+          if (previous?.id) applyEntryDelete(previous.id)
+        },
+      )
       .subscribe((status: string) => {
-        if (status === "SUBSCRIBED") setRealtimeStatus("connected")
-        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        if (status === "SUBSCRIBED") {
+          setRealtimeStatus("connected")
+          loadBoard(scoreboardId).catch((err) => console.error("Realtime initial sync failed:", err))
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           setRealtimeStatus("disconnected")
         }
       })
 
-    const fallback = window.setInterval(sync, 10000)
+    // Realtime is the primary path. This slower reconciliation only repairs missed events
+    // after temporary Wi-Fi/background-tab interruptions.
+    const fallback = window.setInterval(() => {
+      loadBoard(scoreboardId).catch((err) => console.error("Live scoreboard reconciliation failed:", err))
+    }, 30000)
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadBoard(scoreboardId).catch((err) => console.error("Visibility resync failed:", err))
+      }
+    }
+    const handleOnline = () => {
+      setRealtimeStatus("connecting")
+      loadBoard(scoreboardId).catch((err) => console.error("Network resync failed:", err))
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility)
+    window.addEventListener("online", handleOnline)
 
     return () => {
       cancelled = true
       window.clearInterval(fallback)
+      document.removeEventListener("visibilitychange", handleVisibility)
+      window.removeEventListener("online", handleOnline)
       supabase.removeChannel(channel)
     }
-  }, [loadBoard, scoreboardId])
+  }, [applyBoardUpdate, applyEntryDelete, applyEntryUpsert, loadBoard, scoreboardId])
 
   const ranked = useMemo(() => {
     const sorted = [...board.players].sort((a, b) => b.score - a.score)
@@ -189,7 +260,7 @@ export default function ScoreboardDisplayPage() {
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white shadow-lg" style={{ backgroundColor: palette.accent }}>{player.rank}</div>
                   </div>
                   <div className="relative mt-7 flex items-end justify-between gap-4">
-                    <p className="text-[clamp(3.4rem,7vw,6.8rem)] font-black leading-none tracking-[-0.06em]">{player.score}</p>
+                    <p className="text-[clamp(3.4rem,7vw,6.8rem)] font-black leading-none tracking-[-0.06em] transition-all duration-200">{player.score}</p>
                     <p className="mb-2 text-sm font-black tracking-[0.18em] opacity-55">POINTS</p>
                   </div>
                 </article>
