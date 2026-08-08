@@ -4,9 +4,9 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
-  title: "Quiz App",
-  description: "Create and join interactive quizzes",
-  generator: "v0.dev",
+  title: "Quiz Management",
+  description: "デジタルクイズとアナログスコアボードを管理するクイズアプリ",
+  generator: "Next.js",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [{ url: "/icon.png", sizes: "1289x1295", type: "image/png" }],
@@ -15,13 +15,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
