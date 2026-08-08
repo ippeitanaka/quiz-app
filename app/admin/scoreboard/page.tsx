@@ -45,6 +45,20 @@ type ChallengeResult = {
 
 type RealtimeStatus = "connecting" | "connected" | "disconnected"
 
+function readDisplayCredentials() {
+  if (typeof window === "undefined") return null
+
+  try {
+    const url = localStorage.getItem("supabaseUrl")
+    const key = localStorage.getItem("supabaseAnonKey")
+    if (!url || !key) return null
+    return { url, key }
+  } catch (error) {
+    console.error("Failed to read display credentials:", error)
+    return null
+  }
+}
+
 export default function ScoreboardAdminPage() {
   const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
@@ -189,7 +203,19 @@ export default function ScoreboardAdminPage() {
     [board.players],
   )
 
-  const displayUrl = boardRecord ? `/scoreboard/display?id=${encodeURIComponent(boardRecord.id)}` : "/scoreboard/display"
+  const displayUrl = useMemo(() => {
+    const basePath = "/scoreboard/display"
+    const credentials = readDisplayCredentials()
+
+    if (!credentials) return basePath
+
+    const hash = new URLSearchParams({
+      sbUrl: credentials.url,
+      sbKey: credentials.key,
+    }).toString()
+
+    return `${basePath}#${hash}`
+  }, [boardRecord])
 
   const patchLocalPlayer = (id: string, patch: Partial<ScoreboardPlayer>) => {
     setBoard((current) => ({

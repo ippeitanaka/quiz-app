@@ -5,6 +5,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+let browserClientCache: {
+  url: string
+  key: string
+  client: ReturnType<typeof createClient>
+} | null = null
+
 // デバッグ用ログ（開発環境のみ）
 if (process.env.NODE_ENV === "development") {
   console.log("Supabase Environment Check:", {
@@ -47,58 +53,92 @@ function createMisconfiguredClient(reason: string) {
   } as any
 }
 
+function loadBrowserCredentials() {
+  if (typeof window === "undefined") return { url: null, key: null }
+
+  try {
+    return {
+      url: localStorage.getItem("supabaseUrl"),
+      key: localStorage.getItem("supabaseAnonKey"),
+    }
+  } catch (error) {
+    console.error("Failed to load Supabase credentials from localStorage:", error)
+    return { url: null, key: null }
+  }
+}
+
 function resolvePublicCredentials() {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  const browserCredentials = loadBrowserCredentials()
+  const resolvedUrl = browserCredentials.url || supabaseUrl
+  const resolvedKey = browserCredentials.key || supabaseAnonKey
+
+  if (!resolvedUrl || !resolvedKey) {
     return { error: "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY" }
   }
 
-  if (!isValidSupabaseUrl(supabaseUrl) || supabaseUrl.includes("placeholder.supabase.co")) {
-    return { error: `Invalid NEXT_PUBLIC_SUPABASE_URL: ${supabaseUrl}` }
+  if (!isValidSupabaseUrl(resolvedUrl) || resolvedUrl.includes("placeholder.supabase.co")) {
+    return { error: `Invalid NEXT_PUBLIC_SUPABASE_URL: ${resolvedUrl}` }
   }
 
-  return { url: supabaseUrl, key: supabaseAnonKey }
+  return { url: resolvedUrl, key: resolvedKey }
+}
+
+function createPublicClient(url: string, key: string) {
+  return createClient(url, key, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  })
+}
+
+function getPublicClient() {
+  const resolved = resolvePublicCredentials()
+  if ("error" in resolved) {
+    if (process.env.NODE_ENV === "development") {
+      console.error(resolved.error)
+    }
+    return createMisconfiguredClient(resolved.error)
+  }
+
+  if (typeof window === "undefined") {
+    return createPublicClient(resolved.url, resolved.key)
+  }
+
+  if (
+    browserClientCache &&
+    browserClientCache.url === resolved.url &&
+    browserClientCache.key === resolved.key
+  ) {
+    return browserClientCache.client
+  }
+
+  const client = createPublicClient(resolved.url, resolved.key)
+  browserClientCache = { url: resolved.url, key: resolved.key, client }
+  return client
 }
 
 // Supabaseクライアントの作成
-export const supabase = (() => {
-  try {
-    const resolved = resolvePublicCredentials()
-    if ("error" in resolved) {
-      if (process.env.NODE_ENV === "development") {
-        console.error(resolved.error)
+export const supabase = new Proxy(
+  {},
+  {
+    get(_target, property) {
+      try {
+        const client = getPublicClient() as any
+        const value = client[property]
+        return typeof value === "function" ? value.bind(client) : value
+      } catch (error) {
+        console.error("Failed to access Supabase client:", error)
+        const fallback = createMisconfiguredClient(
+          error instanceof Error ? error.message : "Supabase not configured",
+        ) as any
+        const value = fallback[property]
+        return typeof value === "function" ? value.bind(fallback) : value
       }
-      return createMisconfiguredClient(resolved.error)
-    }
-
-    return createClient(resolved.url, resolved.key, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
-    })
-  } catch (error) {
-    console.error("Failed to create Supabase client:", error)
-
-    // エラー時は最小限のモックオブジェクトを返す
-    return {
-      from: () => ({
-        select: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-        insert: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-        update: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-        delete: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-          maybeSingle: () => Promise.resolve({ data: null, error: { message: "Supabase not configured" } }),
-        }),
-      }),
-      auth: {
-        getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      },
-    } as any
-  }
-})()
+    },
+  },
+) as any
 
 // Admin client（サーバーサイド用）
 export const adminSupabase = (() => {

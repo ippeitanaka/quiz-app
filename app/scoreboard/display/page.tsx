@@ -19,6 +19,44 @@ function sortPlayers(players: ScoreboardState["players"]) {
   return [...players].sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id))
 }
 
+function bootstrapSupabaseConfigFromHash() {
+  if (typeof window === "undefined") return
+
+  const rawHash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash
+  if (!rawHash) return
+
+  const params = new URLSearchParams(rawHash)
+  const url = params.get("sbUrl")
+  const key = params.get("sbKey")
+
+  if (!url || !key) return
+
+  try {
+    localStorage.setItem("supabaseUrl", url)
+    localStorage.setItem("supabaseAnonKey", key)
+  } catch (error) {
+    console.error("Failed to save Supabase config from display link:", error)
+  }
+}
+
+async function resolveScoreboardId(explicitId: string) {
+  if (explicitId) return explicitId
+
+  const { data, error } = await supabase
+    .from("scoreboards")
+    .select("id")
+    .eq("is_public", true)
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data?.id) throw new Error("公開中のスコアボードが見つかりません。運営画面でスコアボードを開いてください。")
+
+  return data.id as string
+}
+
 export default function ScoreboardDisplayPage() {
   const [scoreboardId, setScoreboardId] = useState("")
   const [board, setBoard] = useState<ScoreboardState>(DEFAULT_SCOREBOARD_STATE)
@@ -27,11 +65,30 @@ export default function ScoreboardDisplayPage() {
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
 
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("id") || ""
-    setScoreboardId(id)
-    if (!id) {
-      setError("スコアボードIDがありません。運営画面の「表示モード」から開いてください。")
-      setLoading(false)
+    let cancelled = false
+
+    bootstrapSupabaseConfigFromHash()
+
+    const initialize = async () => {
+      try {
+        const explicitId = new URLSearchParams(window.location.search).get("id") || ""
+        const resolvedId = await resolveScoreboardId(explicitId)
+        if (!cancelled) {
+          setScoreboardId(resolvedId)
+          setError("")
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "スコアボードの初期化に失敗しました。")
+          setLoading(false)
+        }
+      }
+    }
+
+    initialize()
+
+    return () => {
+      cancelled = true
     }
   }, [])
 

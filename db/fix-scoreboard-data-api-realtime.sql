@@ -59,3 +59,177 @@ END $$;
 ALTER TABLE public.scoreboards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scoreboard_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scoreboard_events ENABLE ROW LEVEL SECURITY;
+
+-- Public display can read only public scoreboards.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboards'
+      AND policyname = 'Public scoreboards are viewable by everyone'
+  ) THEN
+    CREATE POLICY "Public scoreboards are viewable by everyone"
+      ON public.scoreboards
+      FOR SELECT
+      USING (is_public = true);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboard_entries'
+      AND policyname = 'Public scoreboard entries are viewable by everyone'
+  ) THEN
+    CREATE POLICY "Public scoreboard entries are viewable by everyone"
+      ON public.scoreboard_entries
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM public.scoreboards s
+          WHERE s.id = scoreboard_id
+            AND s.is_public = true
+        )
+      );
+  END IF;
+END $$;
+
+-- Logged-in administrators can manage their own scoreboards.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboards'
+      AND policyname = 'Admins can create their own scoreboards'
+  ) THEN
+    CREATE POLICY "Admins can create their own scoreboards"
+      ON public.scoreboards
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (auth.uid() = admin_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboards'
+      AND policyname = 'Admins can view their own scoreboards'
+  ) THEN
+    CREATE POLICY "Admins can view their own scoreboards"
+      ON public.scoreboards
+      FOR SELECT
+      TO authenticated
+      USING (auth.uid() = admin_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboards'
+      AND policyname = 'Admins can update their own scoreboards'
+  ) THEN
+    CREATE POLICY "Admins can update their own scoreboards"
+      ON public.scoreboards
+      FOR UPDATE
+      TO authenticated
+      USING (auth.uid() = admin_id)
+      WITH CHECK (auth.uid() = admin_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboards'
+      AND policyname = 'Admins can delete their own scoreboards'
+  ) THEN
+    CREATE POLICY "Admins can delete their own scoreboards"
+      ON public.scoreboards
+      FOR DELETE
+      TO authenticated
+      USING (auth.uid() = admin_id);
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboard_entries'
+      AND policyname = 'Admins can manage entries on their own scoreboards'
+  ) THEN
+    CREATE POLICY "Admins can manage entries on their own scoreboards"
+      ON public.scoreboard_entries
+      FOR ALL
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM public.scoreboards s
+          WHERE s.id = scoreboard_id
+            AND s.admin_id = auth.uid()
+        )
+      )
+      WITH CHECK (
+        EXISTS (
+          SELECT 1
+          FROM public.scoreboards s
+          WHERE s.id = scoreboard_id
+            AND s.admin_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'scoreboard_events'
+      AND policyname = 'Admins can manage events on their own scoreboards'
+  ) THEN
+    CREATE POLICY "Admins can manage events on their own scoreboards"
+      ON public.scoreboard_events
+      FOR ALL
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM public.scoreboards s
+          WHERE s.id = scoreboard_id
+            AND s.admin_id = auth.uid()
+        )
+      )
+      WITH CHECK (
+        EXISTS (
+          SELECT 1
+          FROM public.scoreboards s
+          WHERE s.id = scoreboard_id
+            AND s.admin_id = auth.uid()
+        )
+      );
+  END IF;
+END $$;
