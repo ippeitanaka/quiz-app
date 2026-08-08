@@ -71,3 +71,40 @@ export type QuestionCornerPost = {
   content: string
   created_at: string
 }
+
+export type Scoreboard = {
+  id: string
+  admin_id: string
+  title: string
+  description: string | null
+  mode: "individual" | "group"
+  is_public: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ScoreboardEntry = {
+  id: string
+  scoreboard_id: string
+  name: string
+  entry_type: "individual" | "group"
+  score: number
+  color_index: number
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export type ScoreboardEvent = {
+  id: string
+  scoreboard_id: string
+  entry_id: string | null
+  event_type: "manual" | "quick_add" | "quick_subtract" | "challenge" | "reset"
+  delta: number
+  previous_score: number | null
+  new_score: number | null
+  challenge_value: number | null
+  metadata: Record<string, unknown>
+  created_at: string
+}
