@@ -1,10 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
+  Cloud,
+  CloudOff,
   Dice5,
   ExternalLink,
   Loader2,
@@ -21,15 +23,18 @@ import {
   X,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth/auth-context"
+import { supabase } from "@/lib/supabase/supabase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   DEFAULT_SCOREBOARD_STATE,
   SCOREBOARD_COLORS,
-  createScoreboardPlayer,
   drawChallengePoints,
-  loadScoreboardState,
-  saveScoreboardState,
+  scoreboardToState,
+  type ScoreboardEntryRecord,
+  type ScoreboardEventType,
+  type ScoreboardPlayer,
+  type ScoreboardRecord,
   type ScoreboardState,
 } from "@/lib/scoreboard"
 
@@ -38,82 +43,355 @@ type ChallengeResult = {
   points: number
 } | null
 
+type RealtimeStatus = "connecting" | "connected" | "disconnected"
+
 export default function ScoreboardAdminPage() {
   const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
+  const [boardRecord, setBoardRecord] = useState<ScoreboardRecord | null>(null)
   const [board, setBoard] = useState<ScoreboardState>(DEFAULT_SCOREBOARD_STATE)
   const [newName, setNewName] = useState("")
-  const [hydrated, setHydrated] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState<string | null>(null)
+  const [error, setError] = useState("")
   const [challengeResult, setChallengeResult] = useState<ChallengeResult>(null)
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
+  const scoreBeforeEdit = useRef<Record<string, number>>({})
 
   useEffect(() => {
     if (!isLoading && !user) router.replace("/admin/login")
   }, [isLoading, user, router])
 
-  useEffect(() => {
-    setBoard(loadScoreboardState())
-    setHydrated(true)
+  const fetchEntries = useCallback(async (scoreboardId: string) => {
+    const { data, error: entriesError } = await supabase
+      .from("scoreboard_entries")
+      .select("*")
+      .eq("scoreboard_id", scoreboardId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
+
+    if (entriesError) throw entriesError
+    return (data || []) as ScoreboardEntryRecord[]
   }, [])
 
+  const refreshBoard = useCallback(async (scoreboardId: string) => {
+    const { data: freshBoard, error: boardError } = await supabase
+      .from("scoreboards")
+      .select("*")
+      .eq("id", scoreboardId)
+      .single()
+
+    if (boardError) throw boardError
+
+    const entries = await fetchEntries(scoreboardId)
+    const typedBoard = freshBoard as ScoreboardRecord
+    setBoardRecord(typedBoard)
+    setBoard(scoreboardToState(typedBoard, entries))
+  }, [fetchEntries])
+
+  const initializeBoard = useCallback(async () => {
+    if (!user) return
+
+    setLoading(true)
+    setError("")
+
+    try {
+      let { data: existingBoard, error: findError } = await supabase
+        .from("scoreboards")
+        .select("*")
+        .eq("admin_id", user.id)
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (findError) throw findError
+
+      if (!existingBoard) {
+        const { data: createdBoard, error: createError } = await supabase
+          .from("scoreboards")
+          .insert({
+            admin_id: user.id,
+            title: "スコアボード",
+            mode: "individual",
+            is_public: true,
+            is_active: true,
+          })
+          .select("*")
+          .single()
+
+        if (createError) throw createError
+        existingBoard = createdBoard
+      }
+
+      const typedBoard = existingBoard as ScoreboardRecord
+      const entries = await fetchEntries(typedBoard.id)
+      setBoardRecord(typedBoard)
+      setBoard(scoreboardToState(typedBoard, entries))
+    } catch (err) {
+      console.error("Failed to initialize scoreboard:", err)
+      setError(err instanceof Error ? err.message : "スコアボードの読み込みに失敗しました")
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchEntries, user])
+
   useEffect(() => {
-    if (!hydrated) return
-    saveScoreboardState(board)
-  }, [board, hydrated])
+    if (!isLoading && user) initializeBoard()
+  }, [initializeBoard, isLoading, user])
+
+  useEffect(() => {
+    const scoreboardId = boardRecord?.id
+    if (!scoreboardId) return
+
+    setRealtimeStatus("connecting")
+
+    const sync = () => {
+      refreshBoard(scoreboardId).catch((err) => console.error("Realtime refresh failed:", err))
+    }
+
+    const channel = supabase
+      .channel(`scoreboard-admin-${scoreboardId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "scoreboards", filter: `id=eq.${scoreboardId}` },
+        sync,
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "scoreboard_entries", filter: `scoreboard_id=eq.${scoreboardId}` },
+        sync,
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "scoreboard_entries", filter: `scoreboard_id=eq.${scoreboardId}` },
+        sync,
+      )
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "scoreboard_entries" }, sync)
+      .subscribe((status: string) => {
+        if (status === "SUBSCRIBED") setRealtimeStatus("connected")
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setRealtimeStatus("disconnected")
+        }
+      })
+
+    // Realtimeが一時的に切れても端末間同期を復旧できる保険。
+    const fallback = window.setInterval(sync, 10000)
+
+    return () => {
+      window.clearInterval(fallback)
+      supabase.removeChannel(channel)
+    }
+  }, [boardRecord?.id, refreshBoard])
 
   const rankedIds = useMemo(
     () => [...board.players].sort((a, b) => b.score - a.score).map((player) => player.id),
     [board.players],
   )
 
-  const commit = (updater: (current: ScoreboardState) => ScoreboardState) => {
-    setBoard((current) => ({ ...updater(current), updatedAt: Date.now() }))
-  }
+  const displayUrl = boardRecord ? `/scoreboard/display?id=${encodeURIComponent(boardRecord.id)}` : "/scoreboard/display"
 
-  const addPlayer = () => {
-    const name = newName.trim() || `参加者 ${board.players.length + 1}`
-    commit((current) => ({
-      ...current,
-      players: [...current.players, createScoreboardPlayer(name, current.players.length)],
-    }))
-    setNewName("")
-  }
-
-  const updatePlayer = (id: string, patch: { name?: string; score?: number }) => {
-    commit((current) => ({
+  const patchLocalPlayer = (id: string, patch: Partial<ScoreboardPlayer>) => {
+    setBoard((current) => ({
       ...current,
       players: current.players.map((player) => (player.id === id ? { ...player, ...patch } : player)),
+      updatedAt: Date.now(),
     }))
   }
 
-  const adjustScore = (id: string, amount: number) => {
-    commit((current) => ({
-      ...current,
-      players: current.players.map((player) =>
-        player.id === id ? { ...player, score: player.score + amount } : player,
-      ),
-    }))
+  const insertEvent = async (
+    playerId: string | null,
+    eventType: ScoreboardEventType,
+    previousScore: number,
+    newScore: number,
+    challengeValue?: number,
+  ) => {
+    if (!boardRecord) return
+
+    const { error: eventError } = await supabase.from("scoreboard_events").insert({
+      scoreboard_id: boardRecord.id,
+      entry_id: playerId,
+      event_type: eventType,
+      delta: newScore - previousScore,
+      previous_score: previousScore,
+      new_score: newScore,
+      challenge_value: challengeValue ?? null,
+    })
+
+    if (eventError) console.error("Failed to save scoreboard event:", eventError)
   }
 
-  const deletePlayer = (id: string, name: string) => {
-    if (!window.confirm(`${name}をスコアボードから削除しますか？`)) return
-    commit((current) => ({ ...current, players: current.players.filter((player) => player.id !== id) }))
+  const saveTitle = async () => {
+    if (!boardRecord) return
+    const title = board.title.trim() || "スコアボード"
+    setBoard((current) => ({ ...current, title }))
+    setSaving("title")
+    setError("")
+
+    const { error: updateError } = await supabase.from("scoreboards").update({ title }).eq("id", boardRecord.id)
+    if (updateError) {
+      setError(`タイトルを保存できませんでした: ${updateError.message}`)
+      await refreshBoard(boardRecord.id)
+    }
+    setSaving(null)
   }
 
-  const challenge = (id: string, name: string) => {
+  const setMode = async (mode: "individual" | "group") => {
+    if (!boardRecord || boardRecord.mode === mode) return
+    setBoardRecord({ ...boardRecord, mode })
+    const { error: updateError } = await supabase.from("scoreboards").update({ mode }).eq("id", boardRecord.id)
+    if (updateError) {
+      setError(`モードを変更できませんでした: ${updateError.message}`)
+      await refreshBoard(boardRecord.id)
+    }
+  }
+
+  const nextColorIndex = () => {
+    const used = new Set(board.players.map((player) => player.colorIndex % SCOREBOARD_COLORS.length))
+    for (let index = 0; index < SCOREBOARD_COLORS.length; index += 1) {
+      if (!used.has(index)) return index
+    }
+    return board.players.length % SCOREBOARD_COLORS.length
+  }
+
+  const addPlayer = async () => {
+    if (!boardRecord || saving === "add") return
+
+    const fallbackNumber = board.players.length + 1
+    const name = newName.trim() || `${boardRecord.mode === "group" ? "グループ" : "参加者"} ${fallbackNumber}`
+    const sortOrder = board.players.length ? Math.max(...board.players.map((player) => player.sortOrder)) + 1 : 0
+
+    setSaving("add")
+    setError("")
+
+    const { error: insertError } = await supabase.from("scoreboard_entries").insert({
+      scoreboard_id: boardRecord.id,
+      name,
+      entry_type: boardRecord.mode,
+      score: 0,
+      color_index: nextColorIndex(),
+      sort_order: sortOrder,
+    })
+
+    if (insertError) {
+      setError(insertError.message.includes("duplicate") ? "同じ名前は登録できません。別の名前を入力してください。" : insertError.message)
+    } else {
+      setNewName("")
+      await refreshBoard(boardRecord.id)
+    }
+
+    setSaving(null)
+  }
+
+  const savePlayerName = async (player: ScoreboardPlayer) => {
+    if (!boardRecord) return
+    const name = player.name.trim() || "名称未設定"
+    patchLocalPlayer(player.id, { name })
+    setSaving(`name-${player.id}`)
+    setError("")
+
+    const { error: updateError } = await supabase.from("scoreboard_entries").update({ name }).eq("id", player.id)
+    if (updateError) {
+      setError(updateError.message.includes("duplicate") ? "同じ名前は登録できません。" : updateError.message)
+      await refreshBoard(boardRecord.id)
+    }
+    setSaving(null)
+  }
+
+  const persistScore = async (
+    player: ScoreboardPlayer,
+    newScore: number,
+    eventType: ScoreboardEventType,
+    previousScore = player.score,
+    challengeValue?: number,
+  ) => {
+    if (!boardRecord) return
+    const normalizedScore = Number.isFinite(newScore) ? Math.trunc(newScore) : 0
+    patchLocalPlayer(player.id, { score: normalizedScore })
+    setSaving(`score-${player.id}`)
+    setError("")
+
+    const { error: updateError } = await supabase
+      .from("scoreboard_entries")
+      .update({ score: normalizedScore })
+      .eq("id", player.id)
+      .eq("scoreboard_id", boardRecord.id)
+
+    if (updateError) {
+      setError(`得点を保存できませんでした: ${updateError.message}`)
+      await refreshBoard(boardRecord.id)
+    } else {
+      await insertEvent(player.id, eventType, previousScore, normalizedScore, challengeValue)
+    }
+
+    setSaving(null)
+  }
+
+  const adjustScore = async (player: ScoreboardPlayer, amount: number) => {
+    const eventType: ScoreboardEventType = amount >= 0 ? "quick_add" : "quick_subtract"
+    await persistScore(player, player.score + amount, eventType, player.score)
+  }
+
+  const deletePlayer = async (player: ScoreboardPlayer) => {
+    if (!boardRecord || !window.confirm(`${player.name}をスコアボードから削除しますか？`)) return
+    setSaving(`delete-${player.id}`)
+    const { error: deleteError } = await supabase
+      .from("scoreboard_entries")
+      .delete()
+      .eq("id", player.id)
+      .eq("scoreboard_id", boardRecord.id)
+
+    if (deleteError) setError(`削除できませんでした: ${deleteError.message}`)
+    else await refreshBoard(boardRecord.id)
+    setSaving(null)
+  }
+
+  const challenge = async (player: ScoreboardPlayer) => {
     const points = drawChallengePoints()
-    adjustScore(id, points)
-    setChallengeResult({ name, points })
+    await persistScore(player, player.score + points, "challenge", player.score, points)
+    setChallengeResult({ name: player.name, points })
   }
 
-  const resetScores = () => {
-    if (!window.confirm("全員の得点を0点に戻しますか？")) return
-    commit((current) => ({
+  const resetScores = async () => {
+    if (!boardRecord || !board.players.length || !window.confirm("全員の得点を0点に戻しますか？")) return
+    setSaving("reset")
+    setError("")
+
+    const previousPlayers = [...board.players]
+    setBoard((current) => ({
       ...current,
       players: current.players.map((player) => ({ ...player, score: 0 })),
+      updatedAt: Date.now(),
     }))
+
+    const { error: updateError } = await supabase
+      .from("scoreboard_entries")
+      .update({ score: 0 })
+      .eq("scoreboard_id", boardRecord.id)
+
+    if (updateError) {
+      setError(`リセットできませんでした: ${updateError.message}`)
+      await refreshBoard(boardRecord.id)
+    } else {
+      const events = previousPlayers.map((player) => ({
+        scoreboard_id: boardRecord.id,
+        entry_id: player.id,
+        event_type: "reset",
+        delta: -player.score,
+        previous_score: player.score,
+        new_score: 0,
+        challenge_value: null,
+      }))
+      if (events.length) {
+        const { error: eventError } = await supabase.from("scoreboard_events").insert(events)
+        if (eventError) console.error("Failed to save reset events:", eventError)
+      }
+    }
+
+    setSaving(null)
   }
 
-  if (isLoading || !user || !hydrated) {
+  if (isLoading || !user || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="brand-loading"><Loader2 className="h-4 w-4 animate-spin" />スコアボードを読み込んでいます</div>
@@ -131,10 +409,13 @@ export default function ScoreboardAdminPage() {
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="brand-kicker">ANALOG QUIZ MODE</span>
-                  <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold tracking-wider text-white/70">AUTO SAVE</span>
+                  <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wider ${realtimeStatus === "connected" ? "border-emerald-200/20 bg-emerald-300/10 text-emerald-100" : "border-amber-200/20 bg-amber-300/10 text-amber-100"}`}>
+                    {realtimeStatus === "connected" ? <Cloud className="h-3 w-3" /> : <CloudOff className="h-3 w-3" />}
+                    {realtimeStatus === "connected" ? "REALTIME SYNC" : "CONNECTING"}
+                  </span>
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">スコアボード</h1>
-                <p className="mt-1 text-sm text-white/65">アナログで進行するクイズの得点だけを、シンプルに管理します。</p>
+                <p className="mt-1 text-sm text-white/65">Supabaseで保存し、別PC・タブレット・表示画面へリアルタイム同期します。</p>
               </div>
             </div>
 
@@ -143,7 +424,7 @@ export default function ScoreboardAdminPage() {
                 <Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4" />ダッシュボード</Link>
               </Button>
               <Button asChild className="h-11 rounded-xl bg-[#f2d17d] font-bold text-[#173f32] hover:bg-[#f6dda0]">
-                <a href="/scoreboard/display" target="_blank" rel="noreferrer"><MonitorUp className="h-4 w-4" />表示モード<ExternalLink className="h-3.5 w-3.5" /></a>
+                <a href={displayUrl} target="_blank" rel="noreferrer"><MonitorUp className="h-4 w-4" />表示モード<ExternalLink className="h-3.5 w-3.5" /></a>
               </Button>
               <Button variant="outline" onClick={() => signOut()} className="brand-header-button"><LogOut className="h-4 w-4" />ログアウト</Button>
             </div>
@@ -151,18 +432,32 @@ export default function ScoreboardAdminPage() {
         </header>
 
         <div className="brand-content space-y-7">
+          {error && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>
+          )}
+
           <section className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr_0.6fr]">
             <div className="brand-panel p-5 sm:p-6">
-              <label htmlFor="board-title" className="brand-label">ボードタイトル</label>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label htmlFor="board-title" className="brand-label">ボードタイトル</label>
+                <div className="flex rounded-xl border border-[#d7dfd4] bg-[#f7f8f2] p-1 text-xs font-bold">
+                  <button type="button" onClick={() => setMode("individual")} className={`rounded-lg px-3 py-1.5 transition ${boardRecord?.mode === "individual" ? "bg-[#1f5a46] text-white shadow-sm" : "text-[#64756c]"}`}>個人戦</button>
+                  <button type="button" onClick={() => setMode("group")} className={`rounded-lg px-3 py-1.5 transition ${boardRecord?.mode === "group" ? "bg-[#1f5a46] text-white shadow-sm" : "text-[#64756c]"}`}>グループ戦</button>
+                </div>
+              </div>
               <div className="mt-2 flex items-center gap-3">
                 <Input
                   id="board-title"
                   value={board.title}
-                  onChange={(event) => commit((current) => ({ ...current, title: event.target.value }))}
+                  onChange={(event) => setBoard((current) => ({ ...current, title: event.target.value }))}
+                  onBlur={saveTitle}
                   className="h-12 text-lg font-bold"
                   placeholder="例：救急クイズ大会 決勝"
                 />
-                <div className="hidden items-center gap-2 text-xs font-bold text-[#718078] sm:flex"><Save className="h-4 w-4" />自動保存</div>
+                <div className="hidden items-center gap-2 text-xs font-bold text-[#718078] sm:flex">
+                  {saving === "title" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  DB保存
+                </div>
               </div>
             </div>
 
@@ -181,19 +476,23 @@ export default function ScoreboardAdminPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex-1">
                 <p className="brand-kicker !text-[#6d806f]">ENTRY MANAGEMENT</p>
-                <h2 className="mt-1 text-xl font-bold text-[#193c31]">参加者・グループを追加</h2>
+                <h2 className="mt-1 text-xl font-bold text-[#193c31]">{boardRecord?.mode === "group" ? "グループ" : "参加者"}を追加</h2>
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                   <Input
                     value={newName}
                     onChange={(event) => setNewName(event.target.value)}
                     onKeyDown={(event) => { if (event.key === "Enter") addPlayer() }}
-                    placeholder="例：Aチーム / 田中さん"
+                    placeholder={boardRecord?.mode === "group" ? "例：Aチーム" : "例：田中さん"}
                     className="h-12 sm:max-w-md"
                   />
-                  <Button onClick={addPlayer} className="h-12 rounded-xl bg-[#1f5a46] px-6 font-bold text-white hover:bg-[#184b3a]"><UserPlus className="h-4 w-4" />追加する</Button>
+                  <Button onClick={addPlayer} disabled={saving === "add"} className="h-12 rounded-xl bg-[#1f5a46] px-6 font-bold text-white hover:bg-[#184b3a]">
+                    {saving === "add" ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}追加する
+                  </Button>
                 </div>
               </div>
-              <Button variant="outline" onClick={resetScores} disabled={!board.players.length} className="h-11 rounded-xl"><RotateCcw className="h-4 w-4" />全員0点に戻す</Button>
+              <Button variant="outline" onClick={resetScores} disabled={!board.players.length || saving === "reset"} className="h-11 rounded-xl">
+                {saving === "reset" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}全員0点に戻す
+              </Button>
             </div>
           </section>
 
@@ -201,13 +500,14 @@ export default function ScoreboardAdminPage() {
             <section className="rounded-3xl border border-dashed border-emerald-950/15 bg-white/55 px-6 py-16 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e4efe8] text-[#245845]"><UserPlus className="h-7 w-7" /></div>
               <h2 className="mt-5 text-xl font-bold text-[#193c31]">参加者を追加するとスコアカードが表示されます</h2>
-              <p className="mt-2 text-sm text-[#718078]">個人でもチームでもOK。追加順に背景色を自動で振り分けます。</p>
+              <p className="mt-2 text-sm text-[#718078]">追加順に背景色を自動で振り分け、別端末の表示画面にも同期します。</p>
             </section>
           ) : (
             <section className="grid gap-5 xl:grid-cols-2">
               {board.players.map((player) => {
                 const palette = SCOREBOARD_COLORS[player.colorIndex % SCOREBOARD_COLORS.length]
                 const rank = rankedIds.indexOf(player.id) + 1
+                const isPlayerSaving = saving?.endsWith(player.id)
                 return (
                   <article
                     key={player.id}
@@ -215,16 +515,18 @@ export default function ScoreboardAdminPage() {
                     style={{ backgroundColor: palette.background, borderColor: palette.border }}
                   >
                     <div className="flex items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: `${palette.border}66` }}>
-                      <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white shadow-sm" style={{ backgroundColor: palette.accent }}>{rank}</div>
                         <Input
                           value={player.name}
-                          onChange={(event) => updatePlayer(player.id, { name: event.target.value })}
+                          onChange={(event) => patchLocalPlayer(player.id, { name: event.target.value })}
+                          onBlur={() => savePlayerName(player)}
                           className="h-11 border-white/70 bg-white/65 text-lg font-bold"
                           aria-label="参加者名"
                         />
+                        {isPlayerSaving && <Loader2 className="h-4 w-4 shrink-0 animate-spin opacity-50" />}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deletePlayer(player.id, player.name)} className="h-10 w-10 shrink-0 rounded-xl text-red-600 hover:bg-white/70 hover:text-red-700"><Trash2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => deletePlayer(player)} className="h-10 w-10 shrink-0 rounded-xl text-red-600 hover:bg-white/70 hover:text-red-700"><Trash2 className="h-4 w-4" /></Button>
                     </div>
 
                     <div className="grid gap-5 p-5 md:grid-cols-[0.9fr_1.1fr] md:items-center">
@@ -234,7 +536,9 @@ export default function ScoreboardAdminPage() {
                           type="number"
                           inputMode="numeric"
                           value={player.score}
-                          onChange={(event) => updatePlayer(player.id, { score: Number(event.target.value) || 0 })}
+                          onFocus={() => { scoreBeforeEdit.current[player.id] = player.score }}
+                          onChange={(event) => patchLocalPlayer(player.id, { score: Number(event.target.value) || 0 })}
+                          onBlur={() => persistScore(player, player.score, "manual", scoreBeforeEdit.current[player.id] ?? player.score)}
                           className="mt-2 h-20 border-0 bg-transparent text-center text-5xl font-black shadow-none focus-visible:ring-0"
                           style={{ color: palette.text }}
                           aria-label={`${player.name}の得点`}
@@ -245,13 +549,13 @@ export default function ScoreboardAdminPage() {
                       <div className="space-y-3">
                         <div className="grid grid-cols-4 gap-2">
                           {[-10, -5, 5, 10].map((amount) => (
-                            <Button key={amount} variant="outline" onClick={() => adjustScore(player.id, amount)} className="h-11 rounded-xl border-white/70 bg-white/65 font-black hover:bg-white">
+                            <Button key={amount} variant="outline" onClick={() => adjustScore(player, amount)} className="h-11 rounded-xl border-white/70 bg-white/65 font-black hover:bg-white">
                               {amount < 0 ? <Minus className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}{Math.abs(amount)}
                             </Button>
                           ))}
                         </div>
                         <Button
-                          onClick={() => challenge(player.id, player.name)}
+                          onClick={() => challenge(player)}
                           className="h-14 w-full rounded-2xl font-black text-white shadow-[0_10px_22px_rgba(23,63,50,0.18)]"
                           style={{ backgroundColor: palette.accent }}
                         >
@@ -278,7 +582,7 @@ export default function ScoreboardAdminPage() {
             <p className={`mt-4 text-7xl font-black tracking-tight ${challengeResult.points >= 0 ? "text-[#1f6c50]" : "text-[#b24b42]"}`}>
               {challengeResult.points > 0 ? "+" : ""}{challengeResult.points}
             </p>
-            <p className="mt-2 text-sm font-bold text-[#718078]">点をスコアに反映しました</p>
+            <p className="mt-2 text-sm font-bold text-[#718078]">点をスコアに反映し、全端末へ同期しました</p>
             <Button onClick={() => setChallengeResult(null)} className="mt-7 h-12 w-full rounded-xl bg-[#1f5a46] font-bold text-white hover:bg-[#184b3a]">OK</Button>
           </div>
         </div>
