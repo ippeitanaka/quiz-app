@@ -1,13 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, CirclePlus, FileQuestion, Loader2, Sparkles } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { QuizCard } from "@/components/ui/quiz-card"
 import { Textarea } from "@/components/ui/textarea"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useAuth } from "@/lib/auth/auth-context"
 import { supabase } from "@/lib/supabase/supabase"
 
@@ -16,200 +16,134 @@ export default function CreateQuizPage() {
   const [description, setDescription] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
   const router = useRouter()
   const { user, isLoading } = useAuth()
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (!isLoading && !user) {
-      router.push("/admin/login")
-    }
+    if (!isLoading && !user) router.replace("/admin/login")
   }, [user, isLoading, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     setError("")
-    setDebugInfo(null)
 
     if (!title.trim()) {
       setError("タイトルを入力してください")
       return
     }
-
     if (!user) {
       setError("ログインが必要です")
       return
     }
 
     setLoading(true)
-
     try {
-      console.log("Creating quiz with title:", title)
-      console.log("User ID:", user.id)
-
-      console.log("Using shared Supabase client")
-
-      // クイズコードを生成（4桁の数字）
-      const generateQuizCode = () => {
-        return Math.floor(1000 + Math.random() * 9000).toString()
-      }
-
+      const generateQuizCode = () => Math.floor(1000 + Math.random() * 9000).toString()
       let quizCode = generateQuizCode()
-      let codeExists = true
       let attempts = 0
 
-      // ユニークなコードを生成
-      while (codeExists && attempts < 10) {
+      while (attempts < 10) {
         const { data: existingQuiz } = await supabase.from("quizzes").select("id").eq("code", quizCode).single()
-
-        if (!existingQuiz) {
-          codeExists = false
-        } else {
-          quizCode = generateQuizCode()
-          attempts++
-        }
+        if (!existingQuiz) break
+        quizCode = generateQuizCode()
+        attempts += 1
       }
 
-      if (attempts >= 10) {
-        throw new Error("ユニークなクイズコードの生成に失敗しました")
-      }
+      if (attempts >= 10) throw new Error("ユニークなクイズコードの生成に失敗しました")
 
-      console.log("Generated quiz code:", quizCode)
+      const { data: quiz, error: insertError } = await supabase
+        .from("quizzes")
+        .insert([
+          {
+            title: title.trim(),
+            description: description.trim() || null,
+            code: quizCode,
+            admin_id: user.id,
+            is_active: false,
+          },
+        ])
+        .select()
+        .single()
 
-      // クイズを作成（存在するカラムのみ使用）
-      const quizData = {
-        title: title.trim(),
-        description: description.trim() || null,
-        code: quizCode,
-        admin_id: user.id,
-        is_active: false,
-      }
+      if (insertError) throw new Error(`クイズの作成に失敗しました: ${insertError.message}`)
+      if (!quiz) throw new Error("クイズの作成に失敗しました")
 
-      console.log("Quiz data to insert:", quizData)
-
-      const { data: quiz, error: insertError } = await supabase.from("quizzes").insert([quizData]).select().single()
-
-      if (insertError) {
-        console.error("Insert error:", insertError)
-        setDebugInfo({
-          error: insertError,
-          quizData,
-          timestamp: new Date().toISOString(),
-        })
-        throw new Error(`クイズの作成に失敗しました: ${insertError.message}`)
-      }
-
-      if (!quiz) {
-        throw new Error("クイズの作成に失敗しました: データが返されませんでした")
-      }
-
-      console.log("Quiz created successfully:", quiz)
-
-      // クイズ編集ページにリダイレクト
       router.push(`/admin/quiz/${quiz.id}`)
     } catch (err) {
       console.error("Error creating quiz:", err)
-
-      const errorMessage = err instanceof Error ? err.message : "エラーが発生しました。もう一度お試しください"
-      setError(errorMessage)
-
-      // デバッグ情報を設定
-      setDebugInfo({
-        error: err instanceof Error ? err.message : String(err),
-        timestamp: new Date().toISOString(),
-        userExists: !!user,
-        titleLength: title.length,
-        environmentCheck: {
-          url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-          key: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        },
-      })
+      setError(err instanceof Error ? err.message : "エラーが発生しました。もう一度お試しください")
     } finally {
       setLoading(false)
     }
   }
 
   if (isLoading || !user) {
-    return (
-      <div className="container flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>読み込み中...</p>
-        </div>
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center"><div className="brand-loading"><Loader2 className="h-4 w-4 animate-spin" />読み込み中...</div></div>
   }
 
   return (
-    <div className="container flex flex-col items-center justify-center min-h-screen py-12">
-      <Link
-        href="/admin/dashboard"
-        className="absolute top-4 left-4 text-muted-foreground hover:text-primary transition"
-      >
-        ← ダッシュボードに戻る
-      </Link>
-
-      <div className="w-full max-w-2xl">
-        <QuizCard title="新しいクイズを作成" description="クイズのタイトルと説明を入力してください" gradient="pink">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium">
-                クイズタイトル
-              </label>
-              <Input
-                id="title"
-                type="text"
-                placeholder="例: 一般知識クイズ"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={100}
-                disabled={loading}
-              />
+    <main className="brand-page">
+      <div className="brand-shell max-w-5xl">
+        <header className="brand-header">
+          <div className="flex items-center gap-4">
+            <div className="brand-logo-frame"><img src="/icon.png" alt="Quiz App" /></div>
+            <div>
+              <p className="brand-kicker">CREATE DIGITAL QUIZ</p>
+              <h1 className="mt-1 text-2xl font-bold sm:text-3xl">新しいクイズを作成</h1>
+              <p className="mt-1 text-sm text-white/60">まず基本情報を入力して、次の画面で問題を追加します。</p>
             </div>
+          </div>
+        </header>
 
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-medium">
-                説明 (任意)
-              </label>
-              <Textarea
-                id="description"
-                placeholder="クイズの説明を入力してください"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={500}
-                rows={3}
-                disabled={loading}
-              />
-            </div>
+        <div className="brand-content">
+          <Button asChild variant="ghost" className="mb-5 -ml-2 rounded-xl"><Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4" />ダッシュボードに戻る</Link></Button>
 
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600 font-medium mb-2">エラー</p>
-                <p className="text-sm text-red-600">{error}</p>
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+            <section className="brand-panel p-6 sm:p-8">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e4efe8] text-[#245845]"><FileQuestion className="h-5 w-5" /></div>
+                <div><p className="brand-label">QUIZ INFORMATION</p><h2 className="mt-1 text-xl font-black text-[#193c31]">基本情報</h2></div>
               </div>
-            )}
 
-            {debugInfo && process.env.NODE_ENV === "development" && (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600 font-medium mb-2">デバッグ情報</p>
-                <pre className="text-xs text-gray-600 overflow-auto">{JSON.stringify(debugInfo, null, 2)}</pre>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  作成中...
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label htmlFor="title" className="text-sm font-bold text-[#294b3e]">クイズタイトル <span className="text-red-500">*</span></label>
+                  <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例：救急救命クイズ 2026" maxLength={100} disabled={loading} className="h-12" />
+                  <p className="text-xs text-[#7f8d86]">一覧画面や参加画面に表示される名前です。</p>
                 </div>
-              ) : (
-                "クイズを作成"
-              )}
-            </Button>
-          </form>
-        </QuizCard>
+
+                <div className="space-y-2">
+                  <label htmlFor="description" className="text-sm font-bold text-[#294b3e]">説明 <span className="font-normal text-[#8b9891]">（任意）</span></label>
+                  <Textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="クイズのテーマや対象者など" maxLength={500} rows={5} disabled={loading} />
+                </div>
+
+                {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
+
+                <Button type="submit" className="h-12 w-full rounded-xl bg-[#1f5a46] text-base font-black text-white hover:bg-[#184b3a]" disabled={loading}>
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" />作成中...</> : <><CirclePlus className="h-5 w-5" />クイズを作成して問題編集へ</>}
+                </Button>
+              </form>
+            </section>
+
+            <aside className="space-y-4">
+              <div className="brand-panel p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f6ebcd] text-[#8a6b24]"><Sparkles className="h-5 w-5" /></div>
+                <h3 className="mt-4 text-lg font-black text-[#193c31]">このあとできること</h3>
+                <div className="mt-4 space-y-3 text-sm leading-6 text-[#66786f]">
+                  <p>問題文・選択肢・正解・配点を設定できます。</p>
+                  <p>参加用QRコードやアクセスコードを発行できます。</p>
+                  <p>参加者・回答・ランキングをリアルタイムで管理できます。</p>
+                </div>
+              </div>
+
+              <Link href="/admin/scoreboard" className="brand-action-card bg-[linear-gradient(135deg,#e5f0e8,#f7edcf)]">
+                <div><p className="brand-label">NO DIGITAL QUESTIONS?</p><p className="mt-2 font-black text-[#193c31]">アナログクイズなら</p><p className="mt-1 text-sm text-[#718078]">スコアボードだけ使えます</p></div>
+                <div className="brand-action-icon bg-[#8a6b24]"><Sparkles className="h-5 w-5" /></div>
+              </Link>
+            </aside>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }

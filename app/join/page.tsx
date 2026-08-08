@@ -1,25 +1,22 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { ArrowRight, Loader2, Users } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { QuizCard } from "@/components/ui/quiz-card"
 import { supabase } from "@/lib/supabase/supabase"
 
 export default function JoinPage() {
   const [code, setCode] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     setError("")
-    setDebugInfo(null)
 
     if (!code.trim()) {
       setError("コードを入力してください")
@@ -27,91 +24,64 @@ export default function JoinPage() {
     }
 
     setLoading(true)
-
     try {
-      console.log("Checking quiz code:", code)
+      const { data, error: queryError } = await supabase.from("quizzes").select("*").eq("code", code.trim()).single()
 
-      // デバッグ情報を収集
-      const debugData: any = {
-        code,
-        timestamp: new Date().toISOString(),
-      }
-
-      // クイズを直接検索
-      const { data, error } = await supabase.from("quizzes").select("*").eq("code", code).single()
-
-      debugData.queryResult = error ? "エラー" : "成功"
-      debugData.errorMessage = error ? error.message : null
-      debugData.errorDetails = error ? error.details : null
-      debugData.data = data
-
-      setDebugInfo(debugData)
-
-      if (error) {
-        console.error("Error checking quiz:", error)
+      if (queryError || !data) {
         setError("クイズが見つかりませんでした。コードを確認してください。")
-        setLoading(false)
         return
       }
-
       if (!data.is_active) {
         setError("このクイズは現在アクティブではありません。")
-        setLoading(false)
         return
       }
 
-      // クイズが見つかった場合は参加ページに移動
-      router.push(`/join/${code}`)
+      router.push(`/join/${code.trim()}`)
     } catch (err) {
-      console.error("Error in handleSubmit:", err)
+      console.error("Error joining quiz:", err)
       setError("エラーが発生しました。もう一度お試しください。")
-      setDebugInfo({
-        code,
-        timestamp: new Date().toISOString(),
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : null,
-      })
+    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="container flex flex-col items-center justify-center min-h-screen py-12">
-      <div className="w-full max-w-md">
-        <QuizCard title="クイズに参加" description="4桁のコードを入力してください" gradient="blue">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="code" className="text-sm font-medium">
-                クイズコード
-              </label>
+    <main className="brand-page flex items-center justify-center">
+      <div className="brand-shell w-full max-w-lg">
+        <header className="brand-header text-center">
+          <div className="brand-logo-frame mx-auto h-20 w-20 sm:h-24 sm:w-24"><img src="/icon.png" alt="Quiz App" /></div>
+          <p className="brand-kicker mt-5">JOIN QUIZ</p>
+          <h1 className="mt-2 text-3xl font-black">クイズに参加</h1>
+          <p className="mt-2 text-sm text-white/60">先生から案内された4桁のコードを入力してください。</p>
+        </header>
+
+        <div className="brand-content">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="rounded-3xl border border-emerald-950/10 bg-white/70 p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e4efe8] text-[#245845]"><Users className="h-5 w-5" /></div>
+                <div><p className="brand-label">ACCESS CODE</p><p className="font-bold text-[#294b3e]">クイズコード</p></div>
+              </div>
               <Input
                 id="code"
                 type="text"
-                placeholder="4桁のコードを入力"
+                inputMode="numeric"
+                placeholder="0000"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
                 maxLength={4}
-                className="text-center text-2xl tracking-widest"
+                className="h-16 text-center font-mono text-3xl font-black tracking-[0.35em]"
+                autoFocus
               />
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600">{error}</p>}
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "確認中..." : "参加する"}
+            <Button type="submit" className="h-13 w-full rounded-2xl bg-[#1f5a46] py-6 text-base font-black text-white hover:bg-[#184b3a]" disabled={loading}>
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" />確認中...</> : <>参加する<ArrowRight className="h-4 w-4" /></>}
             </Button>
           </form>
-
-          {/* デバッグ情報 */}
-          {debugInfo && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-md text-xs text-left">
-              <details>
-                <summary className="cursor-pointer font-medium">デバッグ情報</summary>
-                <pre className="mt-2 overflow-auto p-2 bg-gray-100 rounded">{JSON.stringify(debugInfo, null, 2)}</pre>
-              </details>
-            </div>
-          )}
-        </QuizCard>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }
