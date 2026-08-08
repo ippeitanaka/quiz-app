@@ -45,6 +45,11 @@ type ChallengeResult = {
 
 type RealtimeStatus = "connecting" | "connected" | "disconnected"
 
+type AdminBoardResponse = {
+  board: ScoreboardRecord
+  entries: ScoreboardEntryRecord[]
+}
+
 function readDisplayCredentials() {
   if (typeof window === "undefined") return null
 
@@ -76,32 +81,41 @@ export default function ScoreboardAdminPage() {
     if (!isLoading && !user) router.replace("/admin/login")
   }, [isLoading, user, router])
 
-  const fetchEntries = useCallback(async (scoreboardId: string) => {
-    const { data, error: entriesError } = await supabase
-      .from("scoreboard_entries")
-      .select("*")
-      .eq("scoreboard_id", scoreboardId)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true })
+  const applyBoardPayload = useCallback((payload: AdminBoardResponse) => {
+    setBoardRecord(payload.board)
+    setBoard(scoreboardToState(payload.board, payload.entries))
+  }, [])
 
-    if (entriesError) throw entriesError
-    return (data || []) as ScoreboardEntryRecord[]
+  const callScoreboardAdmin = useCallback(async (body: Record<string, unknown>) => {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    if (sessionError) throw sessionError
+    if (!session?.access_token) throw new Error("管理者セッションが見つかりません。再ログインしてください。")
+
+    const response = await fetch("/api/scoreboard/admin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(body),
+    })
+
+    const payload = await response.json()
+    if (!response.ok) {
+      throw new Error(payload.error || "スコアボード保存に失敗しました")
+    }
+
+    return payload as AdminBoardResponse
   }, [])
 
   const refreshBoard = useCallback(async (scoreboardId: string) => {
-    const { data: freshBoard, error: boardError } = await supabase
-      .from("scoreboards")
-      .select("*")
-      .eq("id", scoreboardId)
-      .single()
-
-    if (boardError) throw boardError
-
-    const entries = await fetchEntries(scoreboardId)
-    const typedBoard = freshBoard as ScoreboardRecord
-    setBoardRecord(typedBoard)
-    setBoard(scoreboardToState(typedBoard, entries))
-  }, [fetchEntries])
+    const payload = await callScoreboardAdmin({ action: "refresh", scoreboardId })
+    applyBoardPayload(payload)
+  }, [applyBoardPayload, callScoreboardAdmin])
 
   const initializeBoard = useCallback(async () => {
     if (!user) return
@@ -110,45 +124,15 @@ export default function ScoreboardAdminPage() {
     setError("")
 
     try {
-      let { data: existingBoard, error: findError } = await supabase
-        .from("scoreboards")
-        .select("*")
-        .eq("admin_id", user.id)
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (findError) throw findError
-
-      if (!existingBoard) {
-        const { data: createdBoard, error: createError } = await supabase
-          .from("scoreboards")
-          .insert({
-            admin_id: user.id,
-            title: "スコアボード",
-            mode: "individual",
-            is_public: true,
-            is_active: true,
-          })
-          .select("*")
-          .single()
-
-        if (createError) throw createError
-        existingBoard = createdBoard
-      }
-
-      const typedBoard = existingBoard as ScoreboardRecord
-      const entries = await fetchEntries(typedBoard.id)
-      setBoardRecord(typedBoard)
-      setBoard(scoreboardToState(typedBoard, entries))
+      const payload = await callScoreboardAdmin({ action: "load" })
+      applyBoardPayload(payload)
     } catch (err) {
       console.error("Failed to initialize scoreboard:", err)
       setError(err instanceof Error ? err.message : "スコアボードの読み込みに失敗しました")
     } finally {
       setLoading(false)
     }
-  }, [fetchEntries, user])
+  }, [applyBoardPayload, callScoreboardAdmin, user])
 
   useEffect(() => {
     if (!isLoading && user) initializeBoard()
@@ -225,28 +209,6 @@ export default function ScoreboardAdminPage() {
     }))
   }
 
-  const insertEvent = async (
-    playerId: string | null,
-    eventType: ScoreboardEventType,
-    previousScore: number,
-    newScore: number,
-    challengeValue?: number,
-  ) => {
-    if (!boardRecord) return
-
-    const { error: eventError } = await supabase.from("scoreboard_events").insert({
-      scoreboard_id: boardRecord.id,
-      entry_id: playerId,
-      event_type: eventType,
-      delta: newScore - previousScore,
-      previous_score: previousScore,
-      new_score: newScore,
-      challenge_value: challengeValue ?? null,
-    })
-
-    if (eventError) console.error("Failed to save scoreboard event:", eventError)
-  }
-
   const saveTitle = async () => {
     if (!boardRecord) return
     const title = board.title.trim() || "スコアボード"
@@ -254,9 +216,11 @@ export default function ScoreboardAdminPage() {
     setSaving("title")
     setError("")
 
-    const { error: updateError } = await supabase.from("scoreboards").update({ title }).eq("id", boardRecord.id)
-    if (updateError) {
-      setError(`タイトルを保存できませんでした: ${updateError.message}`)
+    try {
+      const payload = await callScoreboardAdmin({ action: "saveTitle", scoreboardId: boardRecord.id, title })
+      applyBoardPayload(payload)
+    } catch (err) {
+      setError(`タイトルを保存できませんでした: ${err instanceof Error ? err.message : "不明なエラー"}`)
       await refreshBoard(boardRecord.id)
     }
     setSaving(null)
@@ -265,9 +229,11 @@ export default function ScoreboardAdminPage() {
   const setMode = async (mode: "individual" | "group") => {
     if (!boardRecord || boardRecord.mode === mode) return
     setBoardRecord({ ...boardRecord, mode })
-    const { error: updateError } = await supabase.from("scoreboards").update({ mode }).eq("id", boardRecord.id)
-    if (updateError) {
-      setError(`モードを変更できませんでした: ${updateError.message}`)
+    try {
+      const payload = await callScoreboardAdmin({ action: "setMode", scoreboardId: boardRecord.id, mode })
+      applyBoardPayload(payload)
+    } catch (err) {
+      setError(`モードを変更できませんでした: ${err instanceof Error ? err.message : "不明なエラー"}`)
       await refreshBoard(boardRecord.id)
     }
   }
@@ -290,20 +256,20 @@ export default function ScoreboardAdminPage() {
     setSaving("add")
     setError("")
 
-    const { error: insertError } = await supabase.from("scoreboard_entries").insert({
-      scoreboard_id: boardRecord.id,
-      name,
-      entry_type: boardRecord.mode,
-      score: 0,
-      color_index: nextColorIndex(),
-      sort_order: sortOrder,
-    })
-
-    if (insertError) {
-      setError(insertError.message.includes("duplicate") ? "同じ名前は登録できません。別の名前を入力してください。" : insertError.message)
-    } else {
+    try {
+      const payload = await callScoreboardAdmin({
+        action: "addEntry",
+        scoreboardId: boardRecord.id,
+        name,
+        entryType: boardRecord.mode,
+        colorIndex: nextColorIndex(),
+        sortOrder,
+      })
+      applyBoardPayload(payload)
       setNewName("")
-      await refreshBoard(boardRecord.id)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "不明なエラー"
+      setError(message.includes("duplicate") ? "同じ名前は登録できません。別の名前を入力してください。" : message)
     }
 
     setSaving(null)
@@ -316,9 +282,17 @@ export default function ScoreboardAdminPage() {
     setSaving(`name-${player.id}`)
     setError("")
 
-    const { error: updateError } = await supabase.from("scoreboard_entries").update({ name }).eq("id", player.id)
-    if (updateError) {
-      setError(updateError.message.includes("duplicate") ? "同じ名前は登録できません。" : updateError.message)
+    try {
+      const payload = await callScoreboardAdmin({
+        action: "renameEntry",
+        scoreboardId: boardRecord.id,
+        entryId: player.id,
+        name,
+      })
+      applyBoardPayload(payload)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "不明なエラー"
+      setError(message.includes("duplicate") ? "同じ名前は登録できません。" : message)
       await refreshBoard(boardRecord.id)
     }
     setSaving(null)
@@ -337,17 +311,20 @@ export default function ScoreboardAdminPage() {
     setSaving(`score-${player.id}`)
     setError("")
 
-    const { error: updateError } = await supabase
-      .from("scoreboard_entries")
-      .update({ score: normalizedScore })
-      .eq("id", player.id)
-      .eq("scoreboard_id", boardRecord.id)
-
-    if (updateError) {
-      setError(`得点を保存できませんでした: ${updateError.message}`)
+    try {
+      const payload = await callScoreboardAdmin({
+        action: "setScore",
+        scoreboardId: boardRecord.id,
+        entryId: player.id,
+        score: normalizedScore,
+        eventType,
+        previousScore,
+        challengeValue: challengeValue ?? null,
+      })
+      applyBoardPayload(payload)
+    } catch (err) {
+      setError(`得点を保存できませんでした: ${err instanceof Error ? err.message : "不明なエラー"}`)
       await refreshBoard(boardRecord.id)
-    } else {
-      await insertEvent(player.id, eventType, previousScore, normalizedScore, challengeValue)
     }
 
     setSaving(null)
@@ -361,14 +338,16 @@ export default function ScoreboardAdminPage() {
   const deletePlayer = async (player: ScoreboardPlayer) => {
     if (!boardRecord || !window.confirm(`${player.name}をスコアボードから削除しますか？`)) return
     setSaving(`delete-${player.id}`)
-    const { error: deleteError } = await supabase
-      .from("scoreboard_entries")
-      .delete()
-      .eq("id", player.id)
-      .eq("scoreboard_id", boardRecord.id)
-
-    if (deleteError) setError(`削除できませんでした: ${deleteError.message}`)
-    else await refreshBoard(boardRecord.id)
+    try {
+      const payload = await callScoreboardAdmin({
+        action: "deleteEntry",
+        scoreboardId: boardRecord.id,
+        entryId: player.id,
+      })
+      applyBoardPayload(payload)
+    } catch (err) {
+      setError(`削除できませんでした: ${err instanceof Error ? err.message : "不明なエラー"}`)
+    }
     setSaving(null)
   }
 
@@ -390,28 +369,16 @@ export default function ScoreboardAdminPage() {
       updatedAt: Date.now(),
     }))
 
-    const { error: updateError } = await supabase
-      .from("scoreboard_entries")
-      .update({ score: 0 })
-      .eq("scoreboard_id", boardRecord.id)
-
-    if (updateError) {
-      setError(`リセットできませんでした: ${updateError.message}`)
+    try {
+      const payload = await callScoreboardAdmin({
+        action: "resetScores",
+        scoreboardId: boardRecord.id,
+        entries: previousPlayers.map((player) => ({ id: player.id, score: player.score })),
+      })
+      applyBoardPayload(payload)
+    } catch (err) {
+      setError(`リセットできませんでした: ${err instanceof Error ? err.message : "不明なエラー"}`)
       await refreshBoard(boardRecord.id)
-    } else {
-      const events = previousPlayers.map((player) => ({
-        scoreboard_id: boardRecord.id,
-        entry_id: player.id,
-        event_type: "reset",
-        delta: -player.score,
-        previous_score: player.score,
-        new_score: 0,
-        challenge_value: null,
-      }))
-      if (events.length) {
-        const { error: eventError } = await supabase.from("scoreboard_events").insert(events)
-        if (eventError) console.error("Failed to save reset events:", eventError)
-      }
     }
 
     setSaving(null)
