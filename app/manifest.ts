@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Create and join interactive quizzes",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#f59e0b",
+    background_color: "#ffb125",
+    theme_color: "#f27a22",
     icons: [
       {
         src: "/icon.png",

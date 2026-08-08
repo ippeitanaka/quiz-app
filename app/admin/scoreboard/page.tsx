@@ -416,7 +416,7 @@ export default function ScoreboardAdminPage() {
               <Button asChild variant="outline" className="brand-header-button">
                 <Link href="/admin/dashboard"><ArrowLeft className="h-4 w-4" />ダッシュボード</Link>
               </Button>
-              <Button asChild className="h-11 rounded-xl bg-[#f2d17d] font-bold text-[#173f32] hover:bg-[#f6dda0]">
+              <Button asChild className="h-11 rounded-xl bg-[#ffe07e] font-bold text-[#9f4719] hover:bg-[#ffe8a2]">
                 <a href={displayUrl} target="_blank" rel="noreferrer"><MonitorUp className="h-4 w-4" />表示モード<ExternalLink className="h-3.5 w-3.5" /></a>
               </Button>
               <Button variant="outline" onClick={() => signOut()} className="brand-header-button"><LogOut className="h-4 w-4" />ログアウト</Button>
@@ -433,9 +433,9 @@ export default function ScoreboardAdminPage() {
             <div className="brand-panel p-5 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <label htmlFor="board-title" className="brand-label">ボードタイトル</label>
-                <div className="flex rounded-xl border border-[#d7dfd4] bg-[#f7f8f2] p-1 text-xs font-bold">
-                  <button type="button" onClick={() => setMode("individual")} className={`rounded-lg px-3 py-1.5 transition ${boardRecord?.mode === "individual" ? "bg-[#1f5a46] text-white shadow-sm" : "text-[#64756c]"}`}>個人戦</button>
-                  <button type="button" onClick={() => setMode("group")} className={`rounded-lg px-3 py-1.5 transition ${boardRecord?.mode === "group" ? "bg-[#1f5a46] text-white shadow-sm" : "text-[#64756c]"}`}>グループ戦</button>
+                <div className="flex rounded-xl border border-[#f3bd87] bg-[#fff4de] p-1 text-xs font-bold">
+                  <button type="button" onClick={() => setMode("individual")} className={`rounded-lg px-3 py-1.5 transition ${boardRecord?.mode === "individual" ? "bg-[#f27a22] text-white shadow-sm" : "text-[#b76534]"}`}>個人戦</button>
+                  <button type="button" onClick={() => setMode("group")} className={`rounded-lg px-3 py-1.5 transition ${boardRecord?.mode === "group" ? "bg-[#f27a22] text-white shadow-sm" : "text-[#b76534]"}`}>グループ戦</button>
                 </div>
               </div>
               <div className="mt-2 flex items-center gap-3">
@@ -447,7 +447,7 @@ export default function ScoreboardAdminPage() {
                   className="h-12 text-lg font-bold"
                   placeholder="例：救急クイズ大会 決勝"
                 />
-                <div className="hidden items-center gap-2 text-xs font-bold text-[#718078] sm:flex">
+                <div className="hidden items-center gap-2 text-xs font-bold text-[#b76534] sm:flex">
                   {saving === "title" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   DB保存
                 </div>
@@ -455,21 +455,21 @@ export default function ScoreboardAdminPage() {
             </div>
 
             <div className="brand-panel flex items-center justify-between p-5 sm:p-6">
-              <div><p className="brand-label">参加者 / グループ</p><p className="mt-2 text-4xl font-black text-[#193c31]">{board.players.length}</p></div>
-              <div className="rounded-2xl bg-[#e4efe8] p-3 text-[#245845]"><Users className="h-7 w-7" /></div>
+              <div><p className="brand-label">参加者 / グループ</p><p className="mt-2 text-4xl font-black text-[#8f360f]">{board.players.length}</p></div>
+              <div className="rounded-2xl bg-[#fff1c8] p-3 text-[#1d82e2]"><Users className="h-7 w-7" /></div>
             </div>
 
             <div className="brand-panel flex items-center justify-between p-5 sm:p-6">
-              <div><p className="brand-label">トップスコア</p><p className="mt-2 text-4xl font-black text-[#193c31]">{board.players.length ? Math.max(...board.players.map((p) => p.score)) : 0}</p></div>
-              <div className="rounded-2xl bg-[#f7eccb] p-3 text-[#8a6b24]"><Trophy className="h-7 w-7" /></div>
+              <div><p className="brand-label">トップスコア</p><p className="mt-2 text-4xl font-black text-[#8f360f]">{board.players.length ? Math.max(...board.players.map((p) => p.score)) : 0}</p></div>
+              <div className="rounded-2xl bg-[#ffe5bb] p-3 text-[#f27a22]"><Trophy className="h-7 w-7" /></div>
             </div>
           </section>
 
           <section className="brand-panel p-5 sm:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex-1">
-                <p className="brand-kicker !text-[#6d806f]">ENTRY MANAGEMENT</p>
-                <h2 className="mt-1 text-xl font-bold text-[#193c31]">{boardRecord?.mode === "group" ? "グループ" : "参加者"}を追加</h2>
+                <p className="brand-kicker !text-[#c17a49]">ENTRY MANAGEMENT</p>
+                <h2 className="mt-1 text-xl font-bold text-[#8f360f]">{boardRecord?.mode === "group" ? "グループ" : "参加者"}を追加</h2>
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                   <Input
                     value={newName}
@@ -478,7 +478,7 @@ export default function ScoreboardAdminPage() {
                     placeholder={boardRecord?.mode === "group" ? "例：Aチーム" : "例：田中さん"}
                     className="h-12 sm:max-w-md"
                   />
-                  <Button onClick={addPlayer} disabled={saving === "add"} className="h-12 rounded-xl bg-[#1f5a46] px-6 font-bold text-white hover:bg-[#184b3a]">
+                  <Button onClick={addPlayer} disabled={saving === "add"} className="h-12 rounded-xl bg-[#f27a22] px-6 font-bold text-white hover:bg-[#e26714]">
                     {saving === "add" ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}追加する
                   </Button>
                 </div>
@@ -490,10 +490,10 @@ export default function ScoreboardAdminPage() {
           </section>
 
           {board.players.length === 0 ? (
-            <section className="rounded-3xl border border-dashed border-emerald-950/15 bg-white/55 px-6 py-16 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e4efe8] text-[#245845]"><UserPlus className="h-7 w-7" /></div>
-              <h2 className="mt-5 text-xl font-bold text-[#193c31]">参加者を追加するとスコアカードが表示されます</h2>
-              <p className="mt-2 text-sm text-[#718078]">追加順に背景色を自動で振り分け、別端末の表示画面にも同期します。</p>
+            <section className="rounded-3xl border border-dashed border-[#f3bd87] bg-white/55 px-6 py-16 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fff1c8] text-[#1d82e2]"><UserPlus className="h-7 w-7" /></div>
+              <h2 className="mt-5 text-xl font-bold text-[#8f360f]">参加者を追加するとスコアカードが表示されます</h2>
+              <p className="mt-2 text-sm text-[#b76534]">追加順に背景色を自動で振り分け、別端末の表示画面にも同期します。</p>
             </section>
           ) : (
             <section className="grid gap-5 xl:grid-cols-2">
@@ -566,17 +566,17 @@ export default function ScoreboardAdminPage() {
       </div>
 
       {challengeResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102b22]/70 p-5 backdrop-blur-sm" onClick={() => setChallengeResult(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#8f360f]/45 p-5 backdrop-blur-sm" onClick={() => setChallengeResult(null)}>
           <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/25 bg-[#fffdf5] p-8 text-center shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-full" onClick={() => setChallengeResult(null)}><X className="h-5 w-5" /></Button>
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#173f32,#2f6e56)] text-white shadow-xl"><Dice5 className="h-10 w-10" /></div>
-            <p className="mt-6 text-sm font-bold tracking-[0.18em] text-[#78877f]">CHALLENGE RESULT</p>
-            <h3 className="mt-2 text-xl font-bold text-[#193c31]">{challengeResult.name}</h3>
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#ff7a3d,#42b3fb)] text-white shadow-xl"><Dice5 className="h-10 w-10" /></div>
+            <p className="mt-6 text-sm font-bold tracking-[0.18em] text-[#c17a49]">CHALLENGE RESULT</p>
+            <h3 className="mt-2 text-xl font-bold text-[#8f360f]">{challengeResult.name}</h3>
             <p className={`mt-4 text-7xl font-black tracking-tight ${challengeResult.points >= 0 ? "text-[#1f6c50]" : "text-[#b24b42]"}`}>
               {challengeResult.points > 0 ? "+" : ""}{challengeResult.points}
             </p>
-            <p className="mt-2 text-sm font-bold text-[#718078]">点をスコアに反映し、全端末へ同期しました</p>
-            <Button onClick={() => setChallengeResult(null)} className="mt-7 h-12 w-full rounded-xl bg-[#1f5a46] font-bold text-white hover:bg-[#184b3a]">OK</Button>
+            <p className="mt-2 text-sm font-bold text-[#b76534]">点をスコアに反映し、全端末へ同期しました</p>
+            <Button onClick={() => setChallengeResult(null)} className="mt-7 h-12 w-full rounded-xl bg-[#f27a22] font-bold text-white hover:bg-[#e26714]">OK</Button>
           </div>
         </div>
       )}

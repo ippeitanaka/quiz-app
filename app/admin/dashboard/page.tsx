@@ -117,80 +117,80 @@ export default function AdminDashboardPage() {
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="brand-panel p-5">
               <div className="flex items-center justify-between">
-                <div><p className="brand-label">TOTAL QUIZZES</p><p className="mt-2 text-3xl font-black text-[#193c31]">{loading ? "—" : quizzes.length}</p></div>
-                <div className="rounded-2xl bg-[#e4efe8] p-3 text-[#245845]"><LayoutDashboard className="h-6 w-6" /></div>
+                <div><p className="brand-label">TOTAL QUIZZES</p><p className="mt-2 text-3xl font-black text-[#8f360f]">{loading ? "—" : quizzes.length}</p></div>
+                <div className="rounded-2xl bg-[#fff1c8] p-3 text-[#1d82e2]"><LayoutDashboard className="h-6 w-6" /></div>
               </div>
-              <p className="mt-3 text-sm text-[#718078]">作成済みのデジタルクイズ</p>
+              <p className="mt-3 text-sm text-[#b76534]">作成済みのデジタルクイズ</p>
             </div>
 
             <div className="brand-panel p-5">
               <div className="flex items-center justify-between">
-                <div><p className="brand-label">ACTIVE</p><p className="mt-2 text-3xl font-black text-[#193c31]">{loading ? "—" : activeCount}</p></div>
-                <div className="rounded-2xl bg-[#f5ebcf] p-3 text-[#8a6b24]"><PlayCircle className="h-6 w-6" /></div>
+                <div><p className="brand-label">ACTIVE</p><p className="mt-2 text-3xl font-black text-[#8f360f]">{loading ? "—" : activeCount}</p></div>
+                <div className="rounded-2xl bg-[#ffe5bb] p-3 text-[#f27a22]"><PlayCircle className="h-6 w-6" /></div>
               </div>
-              <p className="mt-3 text-sm text-[#718078]">現在アクティブなクイズ</p>
+              <p className="mt-3 text-sm text-[#b76534]">現在アクティブなクイズ</p>
             </div>
 
-            <Link href="/admin/scoreboard" className="group brand-action-card bg-[linear-gradient(135deg,#e5f0e8_0%,#f7edcf_100%)]">
+            <Link href="/admin/scoreboard" className="group brand-action-card bg-[linear-gradient(135deg,#fff4cf_0%,#ffd7a5_100%)]">
               <div>
                 <p className="brand-label">ANALOG QUIZ</p>
-                <p className="mt-2 text-lg font-black text-[#193c31]">スコアボード</p>
-                <p className="mt-2 text-sm leading-5 text-[#718078]">参加者・得点・チャレンジを管理</p>
+                <p className="mt-2 text-lg font-black text-[#8f360f]">スコアボード</p>
+                <p className="mt-2 text-sm leading-5 text-[#b76534]">参加者・得点・チャレンジを管理</p>
               </div>
-              <div className="brand-action-icon bg-[#8a6b24]"><Trophy className="h-6 w-6" /></div>
+              <div className="brand-action-icon bg-[linear-gradient(180deg,#ffd85e_0%,#f2a51a_100%)]"><Trophy className="h-6 w-6" /></div>
             </Link>
 
-            <Link href="/admin/create" className="group brand-action-card bg-[linear-gradient(135deg,#edf6ef_0%,#f8f1db_100%)]">
+            <Link href="/admin/create" className="group brand-action-card bg-[linear-gradient(135deg,#fff7dd_0%,#ffe7c2_100%)]">
               <div>
                 <p className="brand-label">CREATE NEW</p>
-                <p className="mt-2 text-lg font-black text-[#193c31]">新しいクイズを作成</p>
-                <p className="mt-2 text-sm leading-5 text-[#718078]">デジタルクイズを新規作成</p>
+                <p className="mt-2 text-lg font-black text-[#8f360f]">新しいクイズを作成</p>
+                <p className="mt-2 text-sm leading-5 text-[#b76534]">デジタルクイズを新規作成</p>
               </div>
-              <div className="brand-action-icon bg-[#1f5a46]"><CirclePlus className="h-6 w-6" /></div>
+              <div className="brand-action-icon"><CirclePlus className="h-6 w-6" /></div>
             </Link>
           </section>
 
           <section className="mt-8">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div><p className="brand-label">YOUR QUIZZES</p><h2 className="mt-1 text-2xl font-bold text-[#193c31]">クイズ一覧</h2></div>
-              <Button asChild className="h-11 rounded-xl bg-[#1f5a46] font-bold text-white hover:bg-[#184b3a]"><Link href="/admin/create"><CirclePlus className="h-4 w-4" />クイズを作成</Link></Button>
+              <div><p className="brand-label">YOUR QUIZZES</p><h2 className="mt-1 text-2xl font-bold text-[#8f360f]">クイズ一覧</h2></div>
+              <Button asChild className="h-11 rounded-xl bg-[#f27a22] font-bold text-white hover:bg-[#e26714]"><Link href="/admin/create"><CirclePlus className="h-4 w-4" />クイズを作成</Link></Button>
             </div>
 
             {loading ? (
-              <div className="flex min-h-52 items-center justify-center rounded-3xl border border-dashed border-emerald-950/15 bg-white/55">
-                <div className="flex items-center gap-3 text-sm font-bold text-[#61756b]"><Loader2 className="h-4 w-4 animate-spin" />クイズを読み込んでいます</div>
+              <div className="flex min-h-52 items-center justify-center rounded-3xl border border-dashed border-[#f3bd87] bg-white/55">
+                <div className="flex items-center gap-3 text-sm font-bold text-[#b76534]"><Loader2 className="h-4 w-4 animate-spin" />クイズを読み込んでいます</div>
               </div>
             ) : quizzes.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-emerald-950/15 bg-white/60 px-6 py-14 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e5efe7] text-[#2d664f]"><LayoutDashboard className="h-7 w-7" /></div>
-                <h3 className="mt-5 text-xl font-bold text-[#193c31]">まだクイズがありません</h3>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#718078]">最初のクイズを作成すると、ここから管理・編集できます。</p>
-                <Button asChild className="mt-6 rounded-xl bg-[#1f5a46] font-bold text-white hover:bg-[#184b3a]"><Link href="/admin/create">最初のクイズを作成</Link></Button>
+              <div className="rounded-3xl border border-dashed border-[#f3bd87] bg-white/60 px-6 py-14 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#fff1c8] text-[#1d82e2]"><LayoutDashboard className="h-7 w-7" /></div>
+                <h3 className="mt-5 text-xl font-bold text-[#8f360f]">まだクイズがありません</h3>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#b76534]">最初のクイズを作成すると、ここから管理・編集できます。</p>
+                <Button asChild className="mt-6 rounded-xl bg-[#f27a22] font-bold text-white hover:bg-[#e26714]"><Link href="/admin/create">最初のクイズを作成</Link></Button>
               </div>
             ) : (
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {quizzes.map((quiz) => (
                   <article key={quiz.id} className="brand-quiz-card">
-                    <div className="h-1.5 bg-gradient-to-r from-[#245845] via-[#5d9677] to-[#f0cf77]" />
+                    <div className="h-1.5 bg-gradient-to-r from-[#ff6d5f] via-[#f27a22] to-[#42b3fb]" />
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                           <div className="mb-2 flex items-center gap-2">
-                            <span className={`h-2.5 w-2.5 rounded-full ${quiz.is_active ? "bg-emerald-500" : "bg-slate-300"}`} />
-                            <span className="text-[11px] font-bold tracking-wider text-[#7a8b82]">{quiz.is_active ? "ACTIVE" : "INACTIVE"}</span>
+                            <span className={`h-2.5 w-2.5 rounded-full ${quiz.is_active ? "bg-[#b7ea35]" : "bg-slate-300"}`} />
+                            <span className="text-[11px] font-bold tracking-wider text-[#c17a49]">{quiz.is_active ? "ACTIVE" : "INACTIVE"}</span>
                           </div>
-                          <h3 className="truncate text-xl font-bold text-[#193c31]">{quiz.title}</h3>
-                          <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-[#718078]">{quiz.description || "説明なし"}</p>
+                          <h3 className="truncate text-xl font-bold text-[#8f360f]">{quiz.title}</h3>
+                          <p className="mt-2 line-clamp-2 min-h-10 text-sm leading-5 text-[#b76534]">{quiz.description || "説明なし"}</p>
                         </div>
                       </div>
 
-                      <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-[#f3f6ee] p-3">
-                        <div><p className="text-[10px] font-bold tracking-wider text-[#89958f]">ACCESS CODE</p><p className="mt-1 font-mono text-base font-bold tracking-wider text-[#284a3d]">{quiz.code}</p></div>
-                        <div><p className="text-[10px] font-bold tracking-wider text-[#89958f]">CREATED</p><p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-[#52675d]"><CalendarDays className="h-3.5 w-3.5" />{new Date(quiz.created_at).toLocaleDateString("ja-JP")}</p></div>
+                      <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-[#fff4de] p-3">
+                        <div><p className="text-[10px] font-bold tracking-wider text-[#d08d58]">ACCESS CODE</p><p className="mt-1 font-mono text-base font-bold tracking-wider text-[#8f360f]">{quiz.code}</p></div>
+                        <div><p className="text-[10px] font-bold tracking-wider text-[#d08d58]">CREATED</p><p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-[#b76534]"><CalendarDays className="h-3.5 w-3.5" />{new Date(quiz.created_at).toLocaleDateString("ja-JP")}</p></div>
                       </div>
 
                       <div className="mt-5 flex gap-2">
-                        <Button asChild className="h-11 flex-1 rounded-xl bg-[#1f5a46] font-bold text-white hover:bg-[#184b3a]"><Link href={`/admin/quiz/${quiz.id}`}>管理する<ArrowRight className="h-4 w-4" /></Link></Button>
+                        <Button asChild className="h-11 flex-1 rounded-xl bg-[#f27a22] font-bold text-white hover:bg-[#e26714]"><Link href={`/admin/quiz/${quiz.id}`}>管理する<ArrowRight className="h-4 w-4" /></Link></Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="outline" size="icon" className="h-11 w-11 shrink-0 rounded-xl border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600" aria-label={`${quiz.title}を削除`}><Trash2 className="h-4 w-4" /></Button>

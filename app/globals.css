@@ -19,76 +19,80 @@
 }
 
 :root {
-  /* Logo-derived brand system: forest green / leaf green / gold / ivory */
-  --brand-deep: #173f32;
-  --brand-primary: #1f5a46;
-  --brand-primary-hover: #184b3a;
-  --brand-leaf: #5d9677;
-  --brand-leaf-soft: #e4efe8;
-  --brand-gold: #f0cf77;
-  --brand-gold-strong: #c99b37;
-  --brand-gold-soft: #f7edcf;
-  --brand-ivory: #fffdf5;
-  --brand-cream: #f8f3e3;
-  --brand-ink: #193c31;
-  --brand-muted: #6e7f76;
-  --brand-border: #bccbbf;
+  /* Icon-derived brand system: sunset orange / mango / sky blue / lime */
+  --brand-deep: #c84a16;
+  --brand-primary: #f27a22;
+  --brand-primary-hover: #e26714;
+  --brand-leaf: #b7ea35;
+  --brand-leaf-soft: #f4ffbf;
+  --brand-gold: #ffd256;
+  --brand-gold-strong: #ecad1b;
+  --brand-gold-soft: #fff1bb;
+  --brand-sky: #3aaef4;
+  --brand-sky-strong: #1d82e2;
+  --brand-coral: #ff6d5f;
+  --brand-ivory: #fffdf8;
+  --brand-cream: #fff4de;
+  --brand-ink: #8f360f;
+  --brand-muted: #b76534;
+  --brand-border: #f3bd87;
 
-  --background: 44 48% 95%;
-  --foreground: 157 38% 16%;
-  --card: 45 55% 98%;
-  --card-foreground: 157 38% 16%;
-  --popover: 45 55% 99%;
-  --popover-foreground: 157 38% 16%;
-  --primary: 158 49% 24%;
-  --primary-foreground: 44 70% 96%;
-  --secondary: 151 25% 90%;
-  --secondary-foreground: 158 43% 22%;
-  --muted: 85 28% 92%;
-  --muted-foreground: 157 16% 38%;
-  --accent: 43 72% 72%;
-  --accent-foreground: 158 43% 22%;
+  --background: 36 100% 94%;
+  --foreground: 20 81% 31%;
+  --card: 40 100% 98%;
+  --card-foreground: 20 81% 31%;
+  --popover: 40 100% 99%;
+  --popover-foreground: 20 81% 31%;
+  --primary: 28 90% 54%;
+  --primary-foreground: 42 100% 98%;
+  --secondary: 46 100% 88%;
+  --secondary-foreground: 28 72% 34%;
+  --muted: 38 100% 92%;
+  --muted-foreground: 23 54% 47%;
+  --accent: 200 90% 60%;
+  --accent-foreground: 42 100% 98%;
   --destructive: 5 69% 49%;
   --destructive-foreground: 45 60% 98%;
-  --border: 151 18% 78%;
-  --input: 151 18% 78%;
-  --ring: 158 49% 24%;
+  --border: 31 85% 76%;
+  --input: 31 85% 76%;
+  --ring: 28 90% 54%;
   --radius: 1rem;
 }
 
 .dark {
-  --background: 163 34% 9%;
-  --foreground: 45 42% 94%;
-  --card: 160 31% 12%;
-  --card-foreground: 45 42% 94%;
-  --popover: 160 31% 12%;
-  --popover-foreground: 45 42% 94%;
-  --primary: 43 66% 63%;
-  --primary-foreground: 163 34% 10%;
-  --secondary: 160 20% 21%;
-  --secondary-foreground: 45 42% 94%;
-  --muted: 160 18% 20%;
-  --muted-foreground: 45 22% 72%;
-  --accent: 158 26% 39%;
-  --accent-foreground: 45 42% 94%;
+  --background: 17 75% 12%;
+  --foreground: 40 100% 94%;
+  --card: 18 72% 15%;
+  --card-foreground: 40 100% 94%;
+  --popover: 18 72% 15%;
+  --popover-foreground: 40 100% 94%;
+  --primary: 36 100% 63%;
+  --primary-foreground: 18 72% 12%;
+  --secondary: 16 44% 24%;
+  --secondary-foreground: 40 100% 94%;
+  --muted: 16 35% 22%;
+  --muted-foreground: 36 70% 76%;
+  --accent: 200 76% 50%;
+  --accent-foreground: 40 100% 96%;
   --destructive: 5 58% 37%;
   --destructive-foreground: 45 60% 98%;
-  --border: 159 17% 27%;
-  --input: 159 17% 27%;
-  --ring: 43 66% 63%;
+  --border: 18 38% 30%;
+  --input: 18 38% 30%;
+  --ring: 36 100% 63%;
 }
 
-html { min-height: 100%; background: #e4eddd; }
+html { min-height: 100%; background: #ffb125; }
 
 body {
   min-height: 100vh;
   color: var(--brand-ink);
   font-family: "Quiz UDBiz Gothic", "BIZ UDPGothic", "BIZ UDGothic", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
   background:
-    radial-gradient(circle at 8% 12%, rgba(93, 150, 119, 0.25), transparent 29%),
-    radial-gradient(circle at 90% 8%, rgba(240, 207, 119, 0.28), transparent 31%),
-    radial-gradient(circle at 55% 95%, rgba(31, 90, 70, 0.12), transparent 35%),
-    linear-gradient(180deg, var(--brand-cream) 0%, #edf2e3 48%, #dfe9d8 100%);
+    radial-gradient(circle at 12% 18%, rgba(255, 112, 87, 0.34), transparent 28%),
+    radial-gradient(circle at 86% 12%, rgba(255, 210, 86, 0.34), transparent 30%),
+    radial-gradient(circle at 72% 34%, rgba(58, 174, 244, 0.18), transparent 22%),
+    radial-gradient(circle at 28% 82%, rgba(183, 234, 53, 0.18), transparent 20%),
+    linear-gradient(135deg, #ff8a34 0%, #ff9a2f 22%, #ffb01a 58%, #ffc938 100%);
   background-attachment: fixed;
 }
 
@@ -98,13 +102,13 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.24;
-  background-image: linear-gradient(rgba(31, 90, 70, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 90, 70, 0.035) 1px, transparent 1px);
-  background-size: 30px 30px;
+  opacity: 0.22;
+  background-image: radial-gradient(circle at center, rgba(255,255,255,0.17) 0, rgba(255,255,255,0.17) 1px, transparent 1.5px);
+  background-size: 26px 26px;
 }
 
 button, input, select, textarea, h1, h2, h3, h4, h5, h6 { font-family: inherit; }
-::selection { background: rgba(240, 207, 119, 0.48); color: var(--brand-deep); }
+::selection { background: rgba(58, 174, 244, 0.35); color: #fff7ec; }
 
 @layer base {
   * { @apply border-border; }
@@ -115,17 +119,19 @@ button, input, select, textarea, h1, h2, h3, h4, h5, h6 { font-family: inherit; 
   .brand-page { @apply min-h-screen px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-7; }
 
   .brand-shell {
-    @apply mx-auto overflow-hidden rounded-[2rem] border border-emerald-950/10 backdrop-blur-xl;
-    background: rgba(255, 253, 245, 0.93);
-    box-shadow: 0 26px 85px rgba(23, 63, 50, 0.15), inset 0 1px rgba(255,255,255,0.78);
+    @apply mx-auto overflow-hidden rounded-[2rem] border backdrop-blur-xl;
+    border-color: rgba(255, 255, 255, 0.46);
+    background: rgba(255, 251, 245, 0.92);
+    box-shadow: 0 30px 90px rgba(194, 87, 15, 0.22), inset 0 1px rgba(255,255,255,0.82);
   }
 
   .brand-header {
     @apply px-5 py-5 text-white sm:px-7 lg:px-9;
     background:
-      radial-gradient(circle at 90% 0%, rgba(240, 207, 119, 0.24), transparent 29%),
-      radial-gradient(circle at 6% 110%, rgba(93, 150, 119, 0.34), transparent 35%),
-      linear-gradient(120deg, var(--brand-deep) 0%, var(--brand-primary) 56%, #2f6e56 100%);
+      radial-gradient(circle at 88% 16%, rgba(255, 226, 140, 0.34), transparent 24%),
+      radial-gradient(circle at 16% 90%, rgba(255, 123, 94, 0.42), transparent 34%),
+      radial-gradient(circle at 72% 36%, rgba(72, 190, 255, 0.22), transparent 18%),
+      linear-gradient(135deg, #ff7a3d 0%, #ff9326 44%, #ffb10f 100%);
   }
 
   .brand-content { @apply p-5 sm:p-7 lg:p-9; }
@@ -148,7 +154,7 @@ button, input, select, textarea, h1, h2, h3, h4, h5, h6 { font-family: inherit; 
     height: 100%;
     object-fit: contain;
     object-position: center;
-    filter: drop-shadow(0 7px 14px rgba(5, 29, 20, 0.26));
+    filter: drop-shadow(0 10px 18px rgba(181, 72, 18, 0.25));
   }
 
   .brand-logo-frame--hero {
@@ -166,44 +172,44 @@ button, input, select, textarea, h1, h2, h3, h4, h5, h6 { font-family: inherit; 
 
   .brand-panel {
     @apply rounded-3xl border backdrop-blur;
-    border-color: rgba(23, 63, 50, 0.10);
-    background: rgba(255, 253, 245, 0.82);
-    box-shadow: 0 12px 30px rgba(45,79,59,0.075), inset 0 1px rgba(255,255,255,0.75);
+    border-color: rgba(241, 151, 64, 0.22);
+    background: rgba(255, 252, 246, 0.82);
+    box-shadow: 0 16px 34px rgba(201, 93, 22, 0.1), inset 0 1px rgba(255,255,255,0.75);
   }
 
   .brand-action-card {
     @apply flex min-h-[132px] items-center justify-between gap-5 rounded-3xl border p-5 transition duration-200;
-    border-color: rgba(23, 63, 50, 0.10);
-    background: linear-gradient(135deg, rgba(228,239,232,0.96), rgba(247,237,207,0.88));
-    box-shadow: 0 12px 30px rgba(45,79,59,0.075), inset 0 1px rgba(255,255,255,0.7);
+    border-color: rgba(241, 151, 64, 0.18);
+    background: linear-gradient(135deg, rgba(255,245,225,0.97), rgba(255,228,170,0.88));
+    box-shadow: 0 14px 32px rgba(201, 93, 22, 0.1), inset 0 1px rgba(255,255,255,0.72);
   }
-  .brand-action-card:hover { transform: translateY(-2px); border-color: rgba(31,90,70,0.18); box-shadow: 0 18px 38px rgba(45,79,59,0.13); }
+  .brand-action-card:hover { transform: translateY(-2px); border-color: rgba(255,136,47,0.28); box-shadow: 0 22px 42px rgba(201,93,22,0.16); }
 
   .brand-action-icon {
     @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white transition duration-200;
-    background: var(--brand-primary);
-    box-shadow: 0 10px 22px rgba(31,90,70,0.2), inset 0 1px rgba(255,255,255,0.18);
+    background: linear-gradient(180deg, var(--brand-sky) 0%, var(--brand-sky-strong) 100%);
+    box-shadow: 0 12px 24px rgba(39,128,222,0.22), inset 0 1px rgba(255,255,255,0.18);
   }
   .brand-action-card:hover .brand-action-icon { transform: scale(1.06) rotate(-2deg); }
 
   .brand-quiz-card {
     @apply overflow-hidden rounded-3xl border transition duration-200;
-    border-color: rgba(23, 63, 50, 0.10);
-    background: rgba(255, 253, 245, 0.86);
-    box-shadow: 0 12px 32px rgba(45,79,59,0.08), inset 0 1px rgba(255,255,255,0.72);
+    border-color: rgba(241, 151, 64, 0.18);
+    background: rgba(255, 252, 246, 0.88);
+    box-shadow: 0 14px 34px rgba(201,93,22,0.1), inset 0 1px rgba(255,255,255,0.72);
   }
-  .brand-quiz-card:hover { transform: translateY(-2px); border-color: rgba(31,90,70,0.18); box-shadow: 0 20px 42px rgba(45,79,59,0.14); }
+  .brand-quiz-card:hover { transform: translateY(-2px); border-color: rgba(255,136,47,0.28); box-shadow: 0 22px 44px rgba(201,93,22,0.16); }
 
   .brand-header-button { @apply h-11 rounded-xl border-white/20 bg-white/10 font-bold text-white hover:bg-white/20 hover:text-white; }
 
   .brand-loading {
     @apply flex items-center gap-3 rounded-full border px-5 py-3 text-sm font-bold backdrop-blur;
-    border-color: rgba(23,63,50,0.10);
-    background: rgba(255,253,245,0.84);
+    border-color: rgba(255,255,255,0.5);
+    background: rgba(255,250,241,0.88);
     color: var(--brand-deep);
-    box-shadow: 0 10px 30px rgba(30,68,48,0.1);
+    box-shadow: 0 14px 32px rgba(201,93,22,0.14);
   }
 }
 
-.cute-shadow { box-shadow: 0 12px 30px rgba(43,74,56,0.14), 0 0 0 1px rgba(255,255,255,0.34) inset; }
-.cute-card { @apply rounded-3xl p-6 cute-shadow; background: linear-gradient(180deg,rgba(255,253,245,0.97),rgba(247,242,225,0.94)); backdrop-filter: blur(12px); }
+.cute-shadow { box-shadow: 0 16px 34px rgba(201,93,22,0.14), 0 0 0 1px rgba(255,255,255,0.34) inset; }
+.cute-card { @apply rounded-3xl p-6 cute-shadow; background: linear-gradient(180deg,rgba(255,252,246,0.97),rgba(255,240,207,0.94)); backdrop-filter: blur(12px); }

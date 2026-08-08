@@ -101,25 +101,25 @@ export default function CreateQuizPage() {
           <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
             <section className="brand-panel p-6 sm:p-8">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e4efe8] text-[#245845]"><FileQuestion className="h-5 w-5" /></div>
-                <div><p className="brand-label">QUIZ INFORMATION</p><h2 className="mt-1 text-xl font-black text-[#193c31]">基本情報</h2></div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1c8] text-[#1d82e2]"><FileQuestion className="h-5 w-5" /></div>
+                <div><p className="brand-label">QUIZ INFORMATION</p><h2 className="mt-1 text-xl font-black text-[#8f360f]">基本情報</h2></div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label htmlFor="title" className="text-sm font-bold text-[#294b3e]">クイズタイトル <span className="text-red-500">*</span></label>
+                  <label htmlFor="title" className="text-sm font-bold text-[#9f4719]">クイズタイトル <span className="text-red-500">*</span></label>
                   <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例：救急救命クイズ 2026" maxLength={100} disabled={loading} className="h-12" />
-                  <p className="text-xs text-[#7f8d86]">一覧画面や参加画面に表示される名前です。</p>
+                  <p className="text-xs text-[#b76534]">一覧画面や参加画面に表示される名前です。</p>
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="description" className="text-sm font-bold text-[#294b3e]">説明 <span className="font-normal text-[#8b9891]">（任意）</span></label>
+                  <label htmlFor="description" className="text-sm font-bold text-[#9f4719]">説明 <span className="font-normal text-[#ca8b64]">（任意）</span></label>
                   <Textarea id="description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="クイズのテーマや対象者など" maxLength={500} rows={5} disabled={loading} />
                 </div>
 
                 {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
 
-                <Button type="submit" className="h-12 w-full rounded-xl bg-[#1f5a46] text-base font-black text-white hover:bg-[#184b3a]" disabled={loading}>
+                <Button type="submit" className="h-12 w-full rounded-xl bg-[#f27a22] text-base font-black text-white hover:bg-[#e26714]" disabled={loading}>
                   {loading ? <><Loader2 className="h-4 w-4 animate-spin" />作成中...</> : <><CirclePlus className="h-5 w-5" />クイズを作成して問題編集へ</>}
                 </Button>
               </form>
@@ -127,18 +127,18 @@ export default function CreateQuizPage() {
 
             <aside className="space-y-4">
               <div className="brand-panel p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f6ebcd] text-[#8a6b24]"><Sparkles className="h-5 w-5" /></div>
-                <h3 className="mt-4 text-lg font-black text-[#193c31]">このあとできること</h3>
-                <div className="mt-4 space-y-3 text-sm leading-6 text-[#66786f]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffe5bb] text-[#f27a22]"><Sparkles className="h-5 w-5" /></div>
+                <h3 className="mt-4 text-lg font-black text-[#8f360f]">このあとできること</h3>
+                <div className="mt-4 space-y-3 text-sm leading-6 text-[#b76534]">
                   <p>問題文・選択肢・正解・配点を設定できます。</p>
                   <p>参加用QRコードやアクセスコードを発行できます。</p>
                   <p>参加者・回答・ランキングをリアルタイムで管理できます。</p>
                 </div>
               </div>
 
-              <Link href="/admin/scoreboard" className="brand-action-card bg-[linear-gradient(135deg,#e5f0e8,#f7edcf)]">
-                <div><p className="brand-label">NO DIGITAL QUESTIONS?</p><p className="mt-2 font-black text-[#193c31]">アナログクイズなら</p><p className="mt-1 text-sm text-[#718078]">スコアボードだけ使えます</p></div>
-                <div className="brand-action-icon bg-[#8a6b24]"><Sparkles className="h-5 w-5" /></div>
+              <Link href="/admin/scoreboard" className="brand-action-card bg-[linear-gradient(135deg,#fff4cf,#ffd7a5)]">
+                <div><p className="brand-label">NO DIGITAL QUESTIONS?</p><p className="mt-2 font-black text-[#8f360f]">アナログクイズなら</p><p className="mt-1 text-sm text-[#b76534]">スコアボードだけ使えます</p></div>
+                <div className="brand-action-icon bg-[linear-gradient(180deg,#ffd85e_0%,#f2a51a_100%)]"><Sparkles className="h-5 w-5" /></div>
               </Link>
             </aside>
           </div>

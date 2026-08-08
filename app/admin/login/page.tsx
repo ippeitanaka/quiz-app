@@ -65,14 +65,15 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen px-5 py-8 md:px-10 md:py-10">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffdf5]/95 shadow-[0_30px_90px_rgba(23,63,50,0.18)] backdrop-blur md:grid-cols-[1.08fr_0.92fr]">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/45 bg-[#fffaf3]/95 shadow-[0_30px_90px_rgba(194,87,15,0.22)] backdrop-blur md:grid-cols-[1.08fr_0.92fr]">
         <section className="brand-header relative hidden overflow-hidden p-12 md:flex md:flex-col md:justify-between">
           <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full border border-white/10 bg-white/5" />
-          <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border border-[#f0cf77]/20 bg-[#f0cf77]/10" />
+          <div className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full border border-[#ffe08b]/25 bg-[#ffe08b]/10" />
+          <div className="absolute left-10 top-1/2 h-24 w-24 rounded-full bg-[#42b3fb]/15 blur-2xl" />
 
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold tracking-[0.2em]">
-              <ShieldCheck className="h-4 w-4 text-[#f0cf77]" />
+              <ShieldCheck className="h-4 w-4 text-[#ffe17f]" />
               ADMIN CONSOLE
             </div>
             <div className="mt-10 flex items-center gap-6">
@@ -80,7 +81,7 @@ export default function AdminLoginPage() {
                 <img src="/icon.png" alt="Quiz App" />
               </div>
               <div>
-                <p className="text-sm font-bold tracking-[0.18em] text-[#f0cf77]">QUIZ MANAGEMENT</p>
+                <p className="text-sm font-bold tracking-[0.18em] text-[#fff2a8]">QUIZ MANAGEMENT</p>
                 <h1 className="mt-2 text-4xl font-bold leading-tight">授業を、もっと<br />見やすく・使いやすく。</h1>
               </div>
             </div>
@@ -101,7 +102,7 @@ export default function AdminLoginPage() {
               <div className="brand-logo-frame brand-logo-frame--hero justify-start">
                 <img src="/icon.png" alt="Quiz App" />
               </div>
-              <p className="mt-4 text-xs font-bold tracking-[0.2em] text-primary">ADMIN CONSOLE</p>
+              <p className="mt-4 text-xs font-bold tracking-[0.2em] text-[#e16616]">ADMIN CONSOLE</p>
             </div>
 
             <div className="mb-8">
