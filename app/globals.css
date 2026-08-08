@@ -19,6 +19,21 @@
 }
 
 :root {
+  /* Logo-derived brand system: forest green / leaf green / gold / ivory */
+  --brand-deep: #173f32;
+  --brand-primary: #1f5a46;
+  --brand-primary-hover: #184b3a;
+  --brand-leaf: #5d9677;
+  --brand-leaf-soft: #e4efe8;
+  --brand-gold: #f0cf77;
+  --brand-gold-strong: #c99b37;
+  --brand-gold-soft: #f7edcf;
+  --brand-ivory: #fffdf5;
+  --brand-cream: #f8f3e3;
+  --brand-ink: #193c31;
+  --brand-muted: #6e7f76;
+  --brand-border: #bccbbf;
+
   --background: 44 48% 95%;
   --foreground: 157 38% 16%;
   --card: 45 55% 98%;
@@ -63,17 +78,17 @@
   --ring: 43 66% 63%;
 }
 
-html { min-height: 100%; background: #e7efdf; }
+html { min-height: 100%; background: #e4eddd; }
 
 body {
   min-height: 100vh;
-  color: #193c31;
+  color: var(--brand-ink);
   font-family: "Quiz UDBiz Gothic", "BIZ UDPGothic", "BIZ UDGothic", "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
   background:
-    radial-gradient(circle at 9% 13%, rgba(100, 165, 127, 0.25), transparent 28%),
-    radial-gradient(circle at 88% 8%, rgba(241, 207, 119, 0.24), transparent 31%),
-    radial-gradient(circle at 54% 92%, rgba(126, 167, 193, 0.16), transparent 34%),
-    linear-gradient(180deg, #f8f3e3 0%, #edf2e3 46%, #e0ead8 100%);
+    radial-gradient(circle at 8% 12%, rgba(93, 150, 119, 0.25), transparent 29%),
+    radial-gradient(circle at 90% 8%, rgba(240, 207, 119, 0.28), transparent 31%),
+    radial-gradient(circle at 55% 95%, rgba(31, 90, 70, 0.12), transparent 35%),
+    linear-gradient(180deg, var(--brand-cream) 0%, #edf2e3 48%, #dfe9d8 100%);
   background-attachment: fixed;
 }
 
@@ -83,13 +98,13 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.28;
+  opacity: 0.24;
   background-image: linear-gradient(rgba(31, 90, 70, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 90, 70, 0.035) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
 button, input, select, textarea, h1, h2, h3, h4, h5, h6 { font-family: inherit; }
-::selection { background: rgba(31, 90, 70, 0.2); color: #173f32; }
+::selection { background: rgba(240, 207, 119, 0.48); color: var(--brand-deep); }
 
 @layer base {
   * { @apply border-border; }
@@ -100,55 +115,95 @@ button, input, select, textarea, h1, h2, h3, h4, h5, h6 { font-family: inherit; 
   .brand-page { @apply min-h-screen px-3 py-3 sm:px-5 sm:py-5 lg:px-8 lg:py-7; }
 
   .brand-shell {
-    @apply mx-auto overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffdf5]/90 backdrop-blur-xl;
-    box-shadow: 0 26px 85px rgba(30, 68, 48, 0.15), inset 0 1px rgba(255,255,255,0.7);
+    @apply mx-auto overflow-hidden rounded-[2rem] border border-emerald-950/10 backdrop-blur-xl;
+    background: rgba(255, 253, 245, 0.93);
+    box-shadow: 0 26px 85px rgba(23, 63, 50, 0.15), inset 0 1px rgba(255,255,255,0.78);
   }
 
   .brand-header {
     @apply px-5 py-5 text-white sm:px-7 lg:px-9;
-    background: radial-gradient(circle at 92% 0%, rgba(242,209,125,0.16), transparent 28%), linear-gradient(120deg,#14392d 0%,#1f513f 52%,#2f6e56 100%);
+    background:
+      radial-gradient(circle at 90% 0%, rgba(240, 207, 119, 0.24), transparent 29%),
+      radial-gradient(circle at 6% 110%, rgba(93, 150, 119, 0.34), transparent 35%),
+      linear-gradient(120deg, var(--brand-deep) 0%, var(--brand-primary) 56%, #2f6e56 100%);
   }
 
   .brand-content { @apply p-5 sm:p-7 lg:p-9; }
 
+  /* The logo is intentionally not boxed. A wider transparent stage lets any logo aspect ratio breathe. */
   .brand-logo-frame {
-    @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 p-1.5 sm:h-16 sm:w-16;
-    box-shadow: 0 12px 28px rgba(6,27,19,0.3), inset 0 1px rgba(255,255,255,0.16);
+    @apply flex shrink-0 items-center justify-center overflow-visible;
+    width: 92px;
+    height: 64px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
-  .brand-logo-frame img { @apply h-full w-full object-contain drop-shadow-lg; }
-  .brand-kicker { @apply text-[10px] font-black tracking-[0.22em] text-[#f2d17d] sm:text-[11px]; }
-  .brand-label { @apply text-[11px] font-black tracking-[0.14em] text-[#718078]; }
+
+  .brand-logo-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    filter: drop-shadow(0 7px 14px rgba(5, 29, 20, 0.26));
+  }
+
+  .brand-logo-frame--hero {
+    width: 132px;
+    height: 94px;
+  }
+
+  .brand-logo-frame--compact {
+    width: 78px;
+    height: 54px;
+  }
+
+  .brand-kicker { @apply text-[10px] font-black tracking-[0.22em] sm:text-[11px]; color: var(--brand-gold); }
+  .brand-label { @apply text-[11px] font-black tracking-[0.14em]; color: var(--brand-muted); }
 
   .brand-panel {
-    @apply rounded-3xl border border-emerald-950/10 bg-white/75 backdrop-blur;
-    box-shadow: 0 12px 30px rgba(45,79,59,0.075), inset 0 1px rgba(255,255,255,0.7);
+    @apply rounded-3xl border backdrop-blur;
+    border-color: rgba(23, 63, 50, 0.10);
+    background: rgba(255, 253, 245, 0.82);
+    box-shadow: 0 12px 30px rgba(45,79,59,0.075), inset 0 1px rgba(255,255,255,0.75);
   }
 
   .brand-action-card {
-    @apply flex min-h-[132px] items-center justify-between gap-5 rounded-3xl border border-emerald-950/10 p-5 transition duration-200;
-    box-shadow: 0 12px 30px rgba(45,79,59,0.075), inset 0 1px rgba(255,255,255,0.65);
+    @apply flex min-h-[132px] items-center justify-between gap-5 rounded-3xl border p-5 transition duration-200;
+    border-color: rgba(23, 63, 50, 0.10);
+    background: linear-gradient(135deg, rgba(228,239,232,0.96), rgba(247,237,207,0.88));
+    box-shadow: 0 12px 30px rgba(45,79,59,0.075), inset 0 1px rgba(255,255,255,0.7);
   }
-  .brand-action-card:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(45,79,59,0.13); }
+  .brand-action-card:hover { transform: translateY(-2px); border-color: rgba(31,90,70,0.18); box-shadow: 0 18px 38px rgba(45,79,59,0.13); }
 
   .brand-action-icon {
     @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white transition duration-200;
+    background: var(--brand-primary);
     box-shadow: 0 10px 22px rgba(31,90,70,0.2), inset 0 1px rgba(255,255,255,0.18);
   }
   .brand-action-card:hover .brand-action-icon { transform: scale(1.06) rotate(-2deg); }
 
   .brand-quiz-card {
-    @apply overflow-hidden rounded-3xl border border-emerald-950/10 bg-white/80 transition duration-200;
-    box-shadow: 0 12px 32px rgba(45,79,59,0.08), inset 0 1px rgba(255,255,255,0.7);
+    @apply overflow-hidden rounded-3xl border transition duration-200;
+    border-color: rgba(23, 63, 50, 0.10);
+    background: rgba(255, 253, 245, 0.86);
+    box-shadow: 0 12px 32px rgba(45,79,59,0.08), inset 0 1px rgba(255,255,255,0.72);
   }
-  .brand-quiz-card:hover { transform: translateY(-2px); box-shadow: 0 20px 42px rgba(45,79,59,0.14); }
+  .brand-quiz-card:hover { transform: translateY(-2px); border-color: rgba(31,90,70,0.18); box-shadow: 0 20px 42px rgba(45,79,59,0.14); }
 
   .brand-header-button { @apply h-11 rounded-xl border-white/20 bg-white/10 font-bold text-white hover:bg-white/20 hover:text-white; }
 
   .brand-loading {
-    @apply flex items-center gap-3 rounded-full border border-emerald-900/10 bg-white/80 px-5 py-3 text-sm font-bold text-emerald-950 backdrop-blur;
+    @apply flex items-center gap-3 rounded-full border px-5 py-3 text-sm font-bold backdrop-blur;
+    border-color: rgba(23,63,50,0.10);
+    background: rgba(255,253,245,0.84);
+    color: var(--brand-deep);
     box-shadow: 0 10px 30px rgba(30,68,48,0.1);
   }
 }
 
 .cute-shadow { box-shadow: 0 12px 30px rgba(43,74,56,0.14), 0 0 0 1px rgba(255,255,255,0.34) inset; }
-.cute-card { @apply rounded-3xl p-6 cute-shadow; background: linear-gradient(180deg,rgba(255,255,250,0.95),rgba(247,242,225,0.92)); backdrop-filter: blur(12px); }
+.cute-card { @apply rounded-3xl p-6 cute-shadow; background: linear-gradient(180deg,rgba(255,253,245,0.97),rgba(247,242,225,0.94)); backdrop-filter: blur(12px); }
