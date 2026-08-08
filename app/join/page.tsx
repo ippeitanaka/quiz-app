@@ -49,7 +49,7 @@ export default function JoinPage() {
     <main className="brand-page flex items-center justify-center">
       <div className="brand-shell w-full max-w-lg">
         <header className="brand-header text-center">
-          <div className="brand-logo-frame mx-auto h-20 w-20 sm:h-24 sm:w-24"><img src="/icon.png" alt="Quiz App" /></div>
+          <div className="brand-logo-frame brand-logo-frame--hero mx-auto"><img src="/icon.png" alt="Quiz App" /></div>
           <p className="brand-kicker mt-5">JOIN QUIZ</p>
           <h1 className="mt-2 text-3xl font-black">クイズに参加</h1>
           <p className="mt-2 text-sm text-white/60">先生から案内された4桁のコードを入力してください。</p>
@@ -57,10 +57,10 @@ export default function JoinPage() {
 
         <div className="brand-content">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="rounded-3xl border border-emerald-950/10 bg-white/70 p-5 shadow-sm">
+            <div className="brand-panel p-5">
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e4efe8] text-[#245845]"><Users className="h-5 w-5" /></div>
-                <div><p className="brand-label">ACCESS CODE</p><p className="font-bold text-[#294b3e]">クイズコード</p></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-secondary text-primary"><Users className="h-5 w-5" /></div>
+                <div><p className="brand-label">ACCESS CODE</p><p className="font-bold text-foreground">クイズコード</p></div>
               </div>
               <Input
                 id="code"
@@ -76,7 +76,7 @@ export default function JoinPage() {
               {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-600">{error}</p>}
             </div>
 
-            <Button type="submit" className="h-13 w-full rounded-2xl bg-[#1f5a46] py-6 text-base font-black text-white hover:bg-[#184b3a]" disabled={loading}>
+            <Button type="submit" className="h-13 w-full rounded-2xl py-6 text-base font-black" disabled={loading}>
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" />確認中...</> : <>参加する<ArrowRight className="h-4 w-4" /></>}
             </Button>
           </form>
